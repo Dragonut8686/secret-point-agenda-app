@@ -216,6 +216,45 @@ export type Database = {
           },
         ]
       }
+      votes: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          telegram_id: string
+          work_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          telegram_id: string
+          work_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          telegram_id?: string
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       works: {
         Row: {
           author_name: string | null

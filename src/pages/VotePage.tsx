@@ -6,6 +6,7 @@ import { EVENT_ID } from '@/config';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Trophy, Heart } from 'lucide-react';
+import { getTelegramId } from '@/utils/getTelegramId';
 
 interface Work {
   id: string;
@@ -22,7 +23,7 @@ const VotePage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   // Telegram ID текущего юзера из WebApp
-  const telegram_id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString();
+  const telegram_id = getTelegramId();
 
   // 1) Получаем список работ вместе с текущим votes_count
   const { data: works, isLoading: isWorksLoading, error: worksError } = useQuery<Work[]>({
@@ -43,6 +44,7 @@ const VotePage = () => {
     queryKey: ['votes', EVENT_ID, telegram_id],
     enabled: !!telegram_id,
     queryFn: async () => {
+      if (!telegram_id) throw new Error('Telegram ID не найден');
       const { data, error } = await supabase
         .from('votes')
         .select('work_id')
@@ -63,7 +65,7 @@ const VotePage = () => {
     string
   >({
     mutationFn: async (workId: string) => {
-      if (!telegram_id) throw new Error('Telegram ID not found');
+      if (!telegram_id) throw new Error('Telegram ID не найден. Откройте приложение через Telegram');
       // Найдём объект работы, чтобы знать текущий votes_count
       const work = works?.find(w => w.id === workId);
       if (!work) throw new Error('Work not found');
@@ -137,6 +139,15 @@ const VotePage = () => {
   };
 
   // 4) Общие состояния загрузки / ошибки
+  if (!telegram_id) {
+    return (
+      <div className="text-center p-6">
+        <p className="text-red-500 mb-4">Telegram ID не найден</p>
+        <p className="text-gray-600">Пожалуйста, откройте приложение через Telegram</p>
+      </div>
+    );
+  }
+
   if (isWorksLoading || isVotesLoading) {
     return <div className="text-center p-6">Загрузка...</div>;
   }
