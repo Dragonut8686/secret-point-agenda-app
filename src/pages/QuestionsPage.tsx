@@ -6,21 +6,13 @@ import { EVENT_ID, BOT_TOKEN } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle } from 'lucide-react';
 
 interface Speaker {
   id: string;
   name: string;
-  bio: string | null;
-  photo_url: string | null;
   telegram_id: string | null;
 }
 
@@ -31,39 +23,33 @@ const QuestionsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const { data: speakers, isLoading } = useQuery<Speaker[]>({
+  // 1) Выбираем спикеров вместе с их telegram_id
+  const { data: speakers, isLoading } = useQuery({
     queryKey: ['speakers', EVENT_ID],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('speakers')
-        .select('*')
+        .select('id, name, telegram_id')
         .eq('event_id', EVENT_ID);
 
       if (error) throw error;
-      return data;
+      return data as Speaker[];
     },
   });
 
   const submitQuestion = async () => {
     if (!questionText.trim()) {
-      return toast({
-        title: "Ошибка",
-        description: "Введите текст вопроса",
-        variant: "destructive",
-      });
+      toast({ title: "Ошибка", description: "Введите текст вопроса", variant: "destructive" });
+      return;
     }
     if (!selectedSpeakerId) {
-      return toast({
-        title: "Ошибка",
-        description: "Выберите спикера",
-        variant: "destructive",
-      });
+      toast({ title: "Ошибка", description: "Выберите спикера", variant: "destructive" });
+      return;
     }
 
     setIsSubmitting(true);
-
     try {
-      // 1) вставляем вопрос
+      // 2) Сохраняем вопрос
       const { error: insertError } = await supabase
         .from('questions')
         .insert({
@@ -76,42 +62,28 @@ const QuestionsPage = () => {
 
       if (insertError) throw insertError;
 
-      // 2) получаем telegram_id спикера
-      const { data: spData, error: spError } = await supabase
-        .from('speakers')
-        .select('telegram_id')
-        .eq('id', selectedSpeakerId)
-        .single();
+      toast({ title: "Успешно!", description: "Вопрос отправлен!" });
 
-      if (!spError && spData?.telegram_id) {
-        const chatId = spData.telegram_id.replace(/^@/, '');
-        // 3) шлём уведомление
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: `📩 *Новый вопрос*\n${ questionText.trim() }`,
-            parse_mode: 'Markdown'
-          }),
-        }).catch(console.error);
+      // 3) Отправляем Telegram-сообщение спикеру
+      const speaker = speakers?.find(s => s.id === selectedSpeakerId);
+      if (speaker?.telegram_id) {
+        const chatId = speaker.telegram_id.replace('@', ''); // убираем @ если есть
+        const message = encodeURIComponent(
+          `У вас новый вопрос:\n\n${questionText.trim()}`
+        );
+        // вызываем Bot API
+        await fetch(
+          `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${message}`
+        );
       }
 
-      toast({
-        title: "Успешно!",
-        description: "Вопрос отправлен!",
-      });
+      // Сброс полей
       setQuestionText('');
       setSelectedSpeakerId('');
       setIsAnonymous(false);
-
     } catch (err: any) {
       console.error(err);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось отправить вопрос",
-        variant: "destructive",
-      });
+      toast({ title: "Ошибка", description: "Не удалось отправить вопрос", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -119,52 +91,41 @@ const QuestionsPage = () => {
 
   if (isLoading) {
     return (
-      <motion.div className="min-h-screen p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="max-w-screen-sm mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-6">Вопросы</h1>
-          <p className="text-gray-500">Загрузка...</p>
-        </div>
+      <motion.div className="min-h-screen p-4" initial={{ opacity:0 }} animate={{ opacity:1 }}>
+        <div className="max-w-screen-sm mx-auto text-center">Загрузка спикеров...</div>
       </motion.div>
     );
   }
 
   return (
-    <motion.div className="min-h-screen p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="min-h-screen p-4" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}>
       <div className="max-w-screen-sm mx-auto">
-        <motion.h1 className="text-2xl font-bold text-center mb-6">Вопросы</motion.h1>
-        <motion.div
-          className="bg-white rounded-xl shadow-sm p-6 space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <h1 className="text-2xl font-bold text-center mb-6">Вопросы</h1>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
           <div className="flex items-center mb-4">
             <MessageCircle className="w-5 h-5 mr-2 text-[var(--app-primary)]" />
             <h2 className="text-lg font-semibold">Задать вопрос</h2>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Спикер</label>
+            <label className="text-sm font-medium">Спикер</label>
             <Select value={selectedSpeakerId} onValueChange={setSelectedSpeakerId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Выберите спикера" />
-              </SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Выберите спикера" /></SelectTrigger>
               <SelectContent>
-                {speakers?.map((sp) => (
-                  <SelectItem key={sp.id} value={sp.id}>
-                    {sp.name}
-                  </SelectItem>
+                {speakers?.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Вопрос</label>
+            <label className="text-sm font-medium">Вопрос</label>
             <Textarea
               placeholder="Введите ваш вопрос..."
               value={questionText}
-              onChange={(e) => setQuestionText(e.target.value)}
+              onChange={e => setQuestionText(e.target.value)}
               className="min-h-[100px] resize-none"
             />
           </div>
@@ -173,19 +134,15 @@ const QuestionsPage = () => {
             <Checkbox
               id="anonymous"
               checked={isAnonymous}
-              onCheckedChange={(c) => setIsAnonymous(c === true)}
+              onCheckedChange={c => setIsAnonymous(c === true)}
             />
-            <label htmlFor="anonymous" className="text-sm text-gray-700">Задать анонимно</label>
+            <label htmlFor="anonymous" className="text-sm">Задать анонимно</label>
           </div>
 
-          <Button
-            onClick={submitQuestion}
-            disabled={isSubmitting}
-            className="w-full bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white"
-          >
+          <Button onClick={submitQuestion} disabled={isSubmitting} className="w-full">
             {isSubmitting ? 'Отправка...' : 'Отправить'}
           </Button>
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );
