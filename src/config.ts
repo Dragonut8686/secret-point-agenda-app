@@ -1,26 +1,29 @@
+// src/config.ts
 
 // FIXME: Замените это на ваш актуальный ID мероприятия из таблицы 'events' в Supabase.
-export const EVENT_ID = "00000000-0000-0000-0000-000000000000"; // Пример UUID
+export const EVENT_ID = "YOUR_REAL_EVENT_UUID_HERE"; // <-- вставьте сюда ваш UUID
+
+// Токен вашего Telegram-бота
+export const BOT_TOKEN = "8001709362:AAEemeq8ZA4F1sBHaGBl2Um32lHhBOihl0k";
 
 if (EVENT_ID === "00000000-0000-0000-0000-000000000000") {
   console.warn(
     "Используется EVENT_ID по умолчанию. Пожалуйста, замените его в src/config.ts на ваш актуальный ID мероприятия."
   );
-  // Вы можете также показать это предупреждение в UI для удобства разработки
 }
 
-// Типы для theme_json, чтобы было удобнее работать с данными
+// Типы для theme_json
 export interface ThemeContact {
   name: string;
   phone?: string;
   email?: string;
-  icon?: string; // Для HotelServicesPage, если иконки будут в theme_json
+  icon?: string;
 }
 
 export interface ThemeMainButton {
-  label: string; // Изменено с title на label
-  page: string;  // Изменено с path на page (будет хранить, например, "SchedulePage")
-  icon?: string; // Можно добавить иконки для кнопок главного меню
+  label: string;
+  page: string;
+  icon?: string;
 }
 
 export interface ThemeJson {
@@ -31,4 +34,3 @@ export interface ThemeJson {
   map_url?: string;
   contacts?: ThemeContact[];
 }
-
