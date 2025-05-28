@@ -59,76 +59,76 @@ const VotePage = () => {
     }
   }, [votes]);
 
-  // 3) Мутация для голосования/отмены
-  const voteMutation = useMutation<
-    { workId: string; action: 'added' | 'removed' },
-    Error,
-    string
-  >({
-    mutationFn: async workId => {
-      if (!telegram_id) throw new Error('Telegram ID не найден');
-      const work = works?.find(w => w.id === workId);
-      if (!work) throw new Error('Work not found');
+// 3) Мутация для голосования/отмены
+const voteMutation = useMutation<
+  { workId: string; action: 'added' | 'removed' },
+  Error,
+  string
+>({
+  mutationFn: async workId => {
+    if (!telegram_id) throw new Error('Telegram ID не найден');
+    const work = works?.find(w => w.id === workId);
+    if (!work) throw new Error('Work not found');
 
-      if (userVotes.has(workId)) {
-        // удалить голос
-        let { error } = await supabase
-          .from('votes')
-          .delete()
-          .eq('event_id', EVENT_ID)
-          .eq('work_id', workId)
-          .eq('telegram_id', telegram_id);
-        if (error) throw error;
+    if (userVotes.has(workId)) {
+      // удалить голос
+      let { error } = await supabase
+        .from('votes')
+        .delete()
+        .eq('event_id', EVENT_ID)
+        .eq('work_id', workId)
+        .eq('telegram_id', telegram_id);
+      if (error) throw error;
 
-        // уменьшить счётчик
-        ({ error } = await supabase
-          .from('works')
-          .update({ votes_count: work.votes_count - 1 })
-          .eq('id', workId));
-        if (error) throw error;
+      // уменьшить счётчик
+      ({ error } = await supabase
+        .from('works')
+        .update({ votes_count: work.votes_count - 1 })
+        .eq('id', workId));
+      if (error) throw error;
 
-        return { workId, action: 'removed' };
-      } else {
-        // добавить голос, игнорируя дубликаты
-        let { error } = await supabase
-          .from('votes')
-          .insert(
-            { event_id: EVENT_ID, work_id: workId, telegram_id },
-            { ignoreDuplicates: true }
-          );
-        if (error) throw error;
+      return { workId, action: 'removed' };
+    } else {
+      // добавить голос, игнорируя дубликаты через upsert
+      let { error } = await supabase
+        .from('votes')
+        .upsert(
+          { event_id: EVENT_ID, work_id: workId, telegram_id },
+          { onConflict: ['event_id', 'work_id', 'telegram_id'] }
+        );
+      if (error) throw error;
 
-        // увеличить счётчик
-        ({ error } = await supabase
-          .from('works')
-          .update({ votes_count: work.votes_count + 1 })
-          .eq('id', workId));
-        if (error) throw error;
+      // увеличить счётчик
+      ({ error } = await supabase
+        .from('works')
+        .update({ votes_count: work.votes_count + 1 })
+        .eq('id', workId));
+      if (error) throw error;
 
-        return { workId, action: 'added' };
-      }
-    },
-    onSuccess: ({ workId, action }) => {
-      // обновить локальный Set
-      setUserVotes(prev => {
-        const updated = new Set(prev);
-        action === 'added' ? updated.add(workId) : updated.delete(workId);
-        return updated;
-      });
-      // инвалидация кэша
-      queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID], refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['votes', EVENT_ID, telegram_id], refetchType: 'all' });
-      toast({
-        title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
-        description: action === 'added' ? 'Спасибо!' : 'Голос отменён',
-      });
-    },
-    onError: error => {
-      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      return { workId, action: 'added' };
     }
-  });
+  },
+  onSuccess: ({ workId, action }) => {
+    // обновить локальный Set
+    setUserVotes(prev => {
+      const updated = new Set(prev);
+      action === 'added' ? updated.add(workId) : updated.delete(workId);
+      return updated;
+    });
+    // инвалидация кэша
+    queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID], refetchType: 'all' });
+    queryClient.invalidateQueries({ queryKey: ['votes', EVENT_ID, telegram_id], refetchType: 'all' });
+    toast({
+      title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
+      description: action === 'added' ? 'Спасибо!' : 'Голос отменён',
+    });
+  },
+  onError: error => {
+    toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+  }
+});
 
-  const handleVote = (workId: string) => voteMutation.mutate(workId);
+const handleVote = (workId: string) => voteMutation.mutate(workId);
 
   // 4) Шапка состояний
   if (!telegram_id) {
