@@ -111,8 +111,8 @@ const VotePage = () => {
         return updated;
       });
       // правильно инвалидируем кэши:
-      queryClient.invalidateQueries(['works', EVENT_ID]);
-      queryClient.invalidateQueries(['votes', EVENT_ID, telegram_id]);
+      queryClient.invalidateQueries(['works', EVENT_ID], { refetchType: 'all' });
+      queryClient.invalidateQueries(['votes', EVENT_ID, telegram_id], { refetchType: 'all' });
       toast({
         title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
         description: action === 'added' ? 'Спасибо!' : 'Голос отменён',
