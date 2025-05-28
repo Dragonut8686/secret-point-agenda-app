@@ -94,7 +94,7 @@ const voteMutation = useMutation<
         .from('votes')
         .upsert(
           { event_id: EVENT_ID, work_id: workId, telegram_id },
-          { onConflict: ['event_id', 'work_id', 'telegram_id'] }
+          { onConflict: 'event_id,work_id,telegram_id' }
         );
       if (error) throw error;
 
