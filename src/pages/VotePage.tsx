@@ -54,7 +54,9 @@ const VotePage = () => {
   });
 
   useEffect(() => {
-    if (votes) setUserVotes(new Set(votes));
+    if (votes) {
+      setUserVotes(new Set(votes));
+    }
   }, [votes]);
 
   // 3) Мутация для голосования/отмены
@@ -87,10 +89,13 @@ const VotePage = () => {
 
         return { workId, action: 'removed' };
       } else {
-        // добавить голос
+        // добавить голос, игнорируя дубликаты
         let { error } = await supabase
           .from('votes')
-          .insert({ event_id: EVENT_ID, work_id: workId, telegram_id });
+          .insert(
+            { event_id: EVENT_ID, work_id: workId, telegram_id },
+            { ignoreDuplicates: true }
+          );
         if (error) throw error;
 
         // увеличить счётчик
@@ -110,9 +115,9 @@ const VotePage = () => {
         action === 'added' ? updated.add(workId) : updated.delete(workId);
         return updated;
       });
-      // правильно инвалидируем кэши:
-queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID], refetchType: 'all' });
-queryClient.invalidateQueries({ queryKey: ['votes', EVENT_ID, telegram_id], refetchType: 'all' });
+      // инвалидация кэша
+      queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['votes', EVENT_ID, telegram_id], refetchType: 'all' });
       toast({
         title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
         description: action === 'added' ? 'Спасибо!' : 'Голос отменён',
