@@ -1,4 +1,3 @@
-
 // src/utils/getTelegramId.ts
 export function getTelegramId(): string | null {
   try {
