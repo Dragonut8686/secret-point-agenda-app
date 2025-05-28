@@ -51,7 +51,7 @@ const HomePage = () => {
           animate={{ opacity: 1 }}
           className="text-lg"
         >
-          Loading event...
+          Загрузка мероприятия...
         </motion.p>
       </div>
     );
