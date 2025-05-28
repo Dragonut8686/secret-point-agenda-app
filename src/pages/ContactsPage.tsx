@@ -33,18 +33,22 @@ const ContactsPage = () => {
   console.log('Contacts array:', theme?.contacts);
 
   if (isLoading) return (
-    <div className="text-center py-10 animate-pulse">
+    <motion.div 
+      className="text-center py-10 animate-pulse max-w-4xl mx-auto"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       <p className="text-lg">Загрузка контактов...</p>
-    </div>
+    </motion.div>
   );
   
   if (error) {
     console.error('Error loading contacts:', error);
     return (
       <motion.div 
-        className="text-center py-10 text-red-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        className="text-center py-10 text-red-500 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
       >
         <p>Ошибка загрузки контактов</p>
         <p className="text-sm mt-2">Проверьте конфигурацию theme_json в Supabase</p>
@@ -55,9 +59,9 @@ const ContactsPage = () => {
   if (!theme) {
     return (
       <motion.div 
-        className="text-center py-10 text-yellow-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        className="text-center py-10 text-yellow-500 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
       >
         <p>Тема мероприятия не найдена</p>
         <p className="text-sm mt-2">Убедитесь, что EVENT_ID корректен в config.ts</p>
@@ -68,9 +72,9 @@ const ContactsPage = () => {
   if (!theme.contacts || theme.contacts.length === 0) {
     return (
       <motion.div 
-        className="text-center py-10 text-orange-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        className="text-center py-10 text-orange-500 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
       >
         <p>Контакты не настроены</p>
         <p className="text-sm mt-2">Добавьте контакты в поле theme_json.contacts в Supabase</p>
@@ -97,7 +101,7 @@ const ContactsPage = () => {
   };
 
   return (
-    <div className="space-y-6 px-4 pb-8">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <motion.h1 
         className="text-3xl font-bold text-center"
         initial={{ opacity: 0, y: -20 }}

@@ -11,9 +11,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const isHomePage = location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex flex-col items-center w-full font-sans">
+    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex flex-col w-full font-sans">
       {!isHomePage && (
-        <div className="w-full p-4 flex items-center">
+        <div className="w-full p-4 flex items-center sticky top-0 z-10 bg-[var(--app-bg)]/95 backdrop-blur-sm">
           <Button 
             variant="ghost" 
             size="icon" 
@@ -25,11 +25,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       )}
       <motion.div 
-        className="w-full flex-grow"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        className={`w-full ${isHomePage ? 'flex-grow flex items-center justify-center' : 'flex-1'} px-4 pb-8`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
       >
         {children}
       </motion.div>
