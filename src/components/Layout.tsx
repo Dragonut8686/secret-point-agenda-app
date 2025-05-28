@@ -13,7 +13,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex flex-col w-full font-sans">
       {!isHomePage && (
-        <div className="w-full p-4 flex items-center sticky top-0 z-10 bg-[var(--app-bg)]/95 backdrop-blur-sm">
+        <div className="w-full p-4 flex items-center sticky top-0 z-10 bg-[var(--app-bg)]">
           <Button 
             variant="ghost" 
             size="icon" 

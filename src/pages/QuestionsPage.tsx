@@ -7,6 +7,7 @@ import { EVENT_ID } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle } from 'lucide-react';
 
@@ -71,7 +72,7 @@ const QuestionsPage = () => {
           event_id: EVENT_ID,
           speaker_id: selectedSpeakerId,
           text: questionText.trim(),
-          author_telegram_id: null, // Will be automatically filled from Telegram profile
+          author_telegram_id: null,
           is_anonymous: isAnonymous,
         });
 
@@ -144,24 +145,22 @@ const QuestionsPage = () => {
             <h2 className="text-lg font-semibold">Задать вопрос</h2>
           </div>
 
-          {/* Speaker select */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Спикер</label>
-            <select
-              value={selectedSpeakerId}
-              onChange={(e) => setSelectedSpeakerId(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--app-primary)] focus:border-transparent"
-            >
-              <option value="">Выберите спикера</option>
-              {speakers?.map((speaker) => (
-                <option key={speaker.id} value={speaker.id}>
-                  {speaker.name}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedSpeakerId} onValueChange={setSelectedSpeakerId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Выберите спикера" />
+              </SelectTrigger>
+              <SelectContent>
+                {speakers?.map((speaker) => (
+                  <SelectItem key={speaker.id} value={speaker.id}>
+                    {speaker.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Question textarea */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Вопрос</label>
             <Textarea
@@ -172,7 +171,6 @@ const QuestionsPage = () => {
             />
           </div>
           
-          {/* Anonymous checkbox */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="anonymous"
