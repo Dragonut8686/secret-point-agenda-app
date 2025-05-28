@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { EVENT_ID, BOT_TOKEN } from '@/config';
+import { EVENT_ID } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,7 +24,7 @@ const QuestionsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // 1) Выбираем спикеров вместе с их telegram_id
+  // Выбираем спикеров вместе с их telegram_id
   const { data: speakers, isLoading } = useQuery({
     queryKey: ['speakers', EVENT_ID],
     queryFn: async () => {
@@ -49,7 +50,7 @@ const QuestionsPage = () => {
 
     setIsSubmitting(true);
     try {
-      // 2) Сохраняем вопрос
+      // Сохраняем вопрос в базе данных
       const { error: insertError } = await supabase
         .from('questions')
         .insert({
@@ -62,20 +63,17 @@ const QuestionsPage = () => {
 
       if (insertError) throw insertError;
 
-      toast({ title: "Успешно!", description: "Вопрос отправлен!" });
+      // Вызываем серверную функцию для уведомления спикера
+      await supabase
+        .functions
+        .invoke('notify_speaker', {
+          body: JSON.stringify({
+            speaker_id: selectedSpeakerId,
+            text: `У вас новый вопрос:\n\n${questionText.trim()}`
+          })
+        });
 
-      // 3) Отправляем Telegram-сообщение спикеру
-      const speaker = speakers?.find(s => s.id === selectedSpeakerId);
-      if (speaker?.telegram_id) {
-        const chatId = speaker.telegram_id.replace('@', ''); // убираем @ если есть
-        const message = encodeURIComponent(
-          `У вас новый вопрос:\n\n${questionText.trim()}`
-        );
-        // вызываем Bot API
-        await fetch(
-          `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${message}`
-        );
-      }
+      toast({ title: "Успешно!", description: "Вопрос отправлен!" });
 
       // Сброс полей
       setQuestionText('');
@@ -130,13 +128,15 @@ const QuestionsPage = () => {
             />
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 mb-4">
             <Checkbox
               id="anonymous"
               checked={isAnonymous}
               onCheckedChange={c => setIsAnonymous(c === true)}
             />
-            <label htmlFor="anonymous" className="text-sm">Задать анонимно</label>
+            <label htmlFor="anonymous" className="text-sm text-gray-700">
+              Задать анонимно
+            </label>
           </div>
 
           <Button onClick={submitQuestion} disabled={isSubmitting} className="w-full">
