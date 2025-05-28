@@ -9,11 +9,15 @@ import { Phone, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fetchEventTheme = async () => {
+  console.log('Fetching event theme for contacts, EVENT_ID:', EVENT_ID);
   const { data, error } = await supabase
     .from('events')
     .select('theme_json')
     .eq('id', EVENT_ID)
     .single();
+
+  console.log('Theme data received:', data);
+  console.log('Error if any:', error);
 
   if (error) throw new Error(error.message);
   return data?.theme_json as ThemeJson | null;
@@ -25,21 +29,54 @@ const ContactsPage = () => {
     queryFn: fetchEventTheme
   });
 
+  console.log('Theme in component:', theme);
+  console.log('Contacts array:', theme?.contacts);
+
   if (isLoading) return (
     <div className="text-center py-10 animate-pulse">
-      <p className="text-lg">Loading contacts...</p>
+      <p className="text-lg">Загрузка контактов...</p>
     </div>
   );
   
-  if (error || !theme || !theme.contacts || theme.contacts.length === 0) {
+  if (error) {
+    console.error('Error loading contacts:', error);
     return (
       <motion.div 
         className="text-center py-10 text-red-500"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <p>Error loading contacts or no contacts provided.</p>
-        <p className="text-sm mt-2">Please check your theme_json configuration.</p>
+        <p>Ошибка загрузки контактов</p>
+        <p className="text-sm mt-2">Проверьте конфигурацию theme_json в Supabase</p>
+      </motion.div>
+    );
+  }
+
+  if (!theme) {
+    return (
+      <motion.div 
+        className="text-center py-10 text-yellow-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <p>Тема мероприятия не найдена</p>
+        <p className="text-sm mt-2">Убедитесь, что EVENT_ID корректен в config.ts</p>
+      </motion.div>
+    );
+  }
+
+  if (!theme.contacts || theme.contacts.length === 0) {
+    return (
+      <motion.div 
+        className="text-center py-10 text-orange-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <p>Контакты не настроены</p>
+        <p className="text-sm mt-2">Добавьте контакты в поле theme_json.contacts в Supabase</p>
+        <p className="text-xs mt-2 text-gray-400">
+          Формат: {`{"contacts": [{"name": "Имя", "phone": "+7...", "email": "..."}]}`}
+        </p>
       </motion.div>
     );
   }
@@ -86,7 +123,7 @@ const ContactsPage = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-[#3F2B96]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <span className="mr-2">👤</span> {contact.name}
+                  <span className="mr-2">👤</span> {contact.name || 'Не указано имя'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -107,6 +144,9 @@ const ContactsPage = () => {
                       <span className="absolute inset-0 bg-[var(--app-primary)]/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                     </a>
                   </Button>
+                )}
+                {!contact.phone && !contact.email && (
+                  <p className="text-gray-400 text-sm">Контактная информация не указана</p>
                 )}
               </CardContent>
             </Card>
