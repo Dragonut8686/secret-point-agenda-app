@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -52,11 +53,15 @@ const VotePage = () => {
         .eq('telegram_id', telegram_id);
       if (error) throw error;
       return data.map(v => v.work_id);
-    },
-    onSuccess: (votedIds) => {
-      setUserVotes(new Set(votedIds));
     }
   });
+
+  // Use useEffect to update userVotes when votes data changes
+  useEffect(() => {
+    if (votes) {
+      setUserVotes(new Set(votes));
+    }
+  }, [votes]);
 
   // 3) Мутация для голосования/отмены голоса
   const voteMutation = useMutation<
