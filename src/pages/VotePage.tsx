@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,226 +18,195 @@ interface Work {
 }
 
 const VotePage = () => {
-  const [votedWorks, setVotedWorks] = useState<Set<string>>(new Set());
+  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // Telegram ID текущего юзера из WebApp
+  const telegram_id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString();
 
-  const { data: works, isLoading, error } = useQuery({
+  // 1) Получаем список работ вместе с текущим votes_count
+  const { data: works, isLoading: isWorksLoading, error: worksError } = useQuery<Work[]>({
     queryKey: ['works', EVENT_ID],
     queryFn: async () => {
-      console.log('Fetching works for EVENT_ID:', EVENT_ID);
       const { data, error } = await supabase
         .from('works')
         .select('*')
         .eq('event_id', EVENT_ID)
-        .order('votes_count', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching works:', error);
-        throw error;
-      }
-
-      console.log('Works data received:', data);
-      return data as Work[];
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
     },
   });
 
-  const voteMutation = useMutation({
+  // 2) Получаем, за какие работы уже голосовал текущий пользователь
+  const { data: votes, isLoading: isVotesLoading, error: votesError } = useQuery<string[]>({
+    queryKey: ['votes', EVENT_ID, telegram_id],
+    enabled: !!telegram_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('votes')
+        .select('work_id')
+        .eq('event_id', EVENT_ID)
+        .eq('telegram_id', telegram_id);
+      if (error) throw error;
+      return data.map(v => v.work_id);
+    },
+    onSuccess: (votedIds) => {
+      setUserVotes(new Set(votedIds));
+    }
+  });
+
+  // 3) Мутация для голосования/отмены голоса
+  const voteMutation = useMutation<
+    { workId: string; action: 'added' | 'removed' },
+    Error,
+    string
+  >({
     mutationFn: async (workId: string) => {
+      if (!telegram_id) throw new Error('Telegram ID not found');
+      // Найдём объект работы, чтобы знать текущий votes_count
       const work = works?.find(w => w.id === workId);
       if (!work) throw new Error('Work not found');
 
-      const { data, error } = await supabase
-        .from('works')
-        .update({ 
-          votes_count: work.votes_count + 1 
-        })
-        .eq('id', workId)
-        .select()
-        .single();
+      if (userVotes.has(workId)) {
+        // Удаляем голос
+        let { error } = await supabase
+          .from('votes')
+          .delete()
+          .eq('event_id', EVENT_ID)
+          .eq('work_id', workId)
+          .eq('telegram_id', telegram_id);
+        if (error) throw error;
 
-      if (error) {
-        console.error('Error voting for work:', error);
-        throw error;
+        // Декрементируем счётчик
+        ({ error } = await supabase
+          .from('works')
+          .update({ votes_count: work.votes_count - 1 })
+          .eq('id', workId));
+        if (error) throw error;
+
+        return { workId, action: 'removed' };
+      } else {
+        // Добавляем голос
+        let { error } = await supabase
+          .from('votes')
+          .insert({ event_id: EVENT_ID, work_id: workId, telegram_id });
+        if (error) throw error;
+
+        // Инкрементируем счётчик
+        ({ error } = await supabase
+          .from('works')
+          .update({ votes_count: work.votes_count + 1 })
+          .eq('id', workId));
+        if (error) throw error;
+
+        return { workId, action: 'added' };
       }
-
-      return data;
     },
-    onSuccess: (data, workId) => {
-      setVotedWorks(prev => new Set([...prev, workId]));
+    onSuccess: ({ workId, action }) => {
+      // Обновим локальный Set голосов
+      setUserVotes(prev => {
+        const updated = new Set(prev);
+        action === 'added' ? updated.add(workId) : updated.delete(workId);
+        return updated;
+      });
+      // Инвалидируем данные по работам (чтобы обновился votes_count)
       queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID] });
+      // Инвалидируем данные по голосам (необязательно, но логично)
+      queryClient.invalidateQueries({ queryKey: ['votes', EVENT_ID, telegram_id] });
+      // Тост
       toast({
-        title: "Ваш голос учтён!",
-        description: "Спасибо за участие в голосовании",
+        title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
+        description: action === 'added'
+          ? 'Спасибо за участие в голосовании'
+          : 'Ваш голос успешно отменён',
       });
     },
     onError: (error) => {
-      console.error('Error voting:', error);
+      console.error(error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось проголосовать",
-        variant: "destructive",
+        title: 'Ошибка',
+        description: error.message,
+        variant: 'destructive',
       });
     },
   });
 
   const handleVote = (workId: string) => {
-    if (votedWorks.has(workId)) {
-      toast({
-        title: "Вы уже голосовали",
-        description: "За эту работу можно голосовать только один раз",
-        variant: "destructive",
-      });
-      return;
-    }
     voteMutation.mutate(workId);
   };
 
-  if (isLoading) {
-    return (
-      <motion.div 
-        className="min-h-screen p-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
-          <p className="text-center text-gray-500">Загрузка работ...</p>
-        </div>
-      </motion.div>
-    );
+  // 4) Общие состояния загрузки / ошибки
+  if (isWorksLoading || isVotesLoading) {
+    return <div className="text-center p-6">Загрузка...</div>;
   }
-
-  if (error) {
-    console.error('Vote page error:', error);
-    return (
-      <motion.div 
-        className="min-h-screen p-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
-          <p className="text-center text-red-500">Ошибка загрузки конкурса</p>
-        </div>
-      </motion.div>
-    );
+  if (worksError || votesError) {
+    return <div className="text-center p-6 text-red-500">Ошибка загрузки данных</div>;
   }
-
   if (!works || works.length === 0) {
-    return (
-      <motion.div 
-        className="min-h-screen p-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
-          <p className="text-center text-gray-500">Конкурсные работы пока не загружены</p>
-        </div>
-      </motion.div>
-    );
+    return <div className="text-center p-6">Нет работ для голосования</div>;
   }
 
+  // 5) Рендер
   return (
-    <motion.div 
-      className="min-h-screen p-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <motion.div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-2xl font-bold text-center mb-6"
-          initial={{ opacity: 0, y: -10 }}
+        <motion.h1 className="text-2xl font-bold text-center mb-6">
+          Конкурс
+        </motion.h1>
+        <motion.div
+          className="grid gap-6 md:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          Конкурс
-        </motion.h1>
-        
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <div className="flex items-center justify-center mb-4">
-            <Trophy className="w-8 h-8 text-[var(--app-primary)] mr-2" />
-            <p className="text-lg text-gray-700">Голосуйте за лучшие работы</p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="grid gap-6 md:grid-cols-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          {works.map((work, index) => (
-            <motion.div
-              key={work.id}
-              className="bg-white text-black rounded-xl shadow-sm p-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)' }}
-            >
-              {work.photo_url && (
-                <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <img 
-                    src={work.photo_url} 
-                    alt={work.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `
-                        <div class="w-full h-full flex items-center justify-center text-gray-400">
-                          <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                          </svg>
-                        </div>
-                      `;
-                    }}
-                  />
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-lg">{work.title}</h3>
-                <div className="flex items-center text-[var(--app-primary)]">
-                  <Heart className="w-4 h-4 mr-1" />
-                  <span className="font-bold">{work.votes_count}</span>
-                </div>
-              </div>
-
-              {work.author_name && (
-                <p className="text-[var(--app-primary)] font-medium mb-2">
-                  Автор: {work.author_name}
-                </p>
-              )}
-
-              {work.description && (
-                <p className="text-gray-600 text-sm mb-4">{work.description}</p>
-              )}
-
-              <Button 
-                onClick={() => handleVote(work.id)}
-                disabled={votedWorks.has(work.id) || voteMutation.isPending}
-                className={`w-full ${
-                  votedWorks.has(work.id) 
-                    ? 'bg-gray-400 text-gray-600' 
-                    : 'bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white'
-                }`}
+          {works.map((work, idx) => {
+            const hasVoted = userVotes.has(work.id);
+            return (
+              <motion.div
+                key={work.id}
+                className="bg-white text-black rounded-xl shadow-sm p-4 flex flex-col"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
-                <Heart className={`w-4 h-4 mr-2 ${votedWorks.has(work.id) ? 'fill-current' : ''}`} />
-                {votedWorks.has(work.id) ? 'Вы проголосовали' : 'Голосовать'}
-              </Button>
-            </motion.div>
-          ))}
+                {work.photo_url && (
+                  <img
+                    src={work.photo_url}
+                    alt={work.title}
+                    className="w-full h-48 object-cover rounded-md mb-4"
+                  />
+                )}
+                <h3 className="text-lg font-bold mb-1">{work.title}</h3>
+                {work.author_name && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    Автор: {work.author_name}
+                  </p>
+                )}
+                {work.description && (
+                  <p className="text-sm text-gray-500 mb-4">
+                    {work.description}
+                  </p>
+                )}
+                <div className="mt-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center text-lg text-[var(--app-primary)]">
+                      <Heart className="w-5 h-5 mr-1" />
+                      <span>{work.votes_count}</span>
+                    </div>
+                    <Button
+                      onClick={() => handleVote(work.id)}
+                      disabled={voteMutation.isPending}
+                      variant={hasVoted ? 'secondary' : 'default'}
+                      className="flex items-center"
+                    >
+                      <Trophy className="w-4 h-4 mr-2" />
+                      {hasVoted ? 'Отменить голос' : 'Голосовать'}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
     </motion.div>
