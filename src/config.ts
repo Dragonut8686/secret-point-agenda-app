@@ -1,16 +1,10 @@
 // src/config.ts
 
-// FIXME: Замените это на ваш актуальный ID мероприятия из таблицы 'events' в Supabase.
-export const EVENT_ID = "00000000-0000-0000-0000-000000000000"; // <-- вставьте сюда ваш UUID
+// TODO: Замените это на ваш актуальный ID мероприятия из таблицы 'events' в Supabase.
+export const EVENT_ID: string = "00000000-0000-0000-0000-000000000000"; // <-- вставьте ваш UUID сюда
 
 // Токен вашего Telegram-бота
-export const BOT_TOKEN = "8001709362:AAEemeq8ZA4F1sBHaGBl2Um32lHhBOihl0k";
-
-if (EVENT_ID === "00000000-0000-0000-0000-000000000000") {
-  console.warn(
-    "Используется EVENT_ID по умолчанию. Пожалуйста, замените его в src/config.ts на ваш актуальный ID мероприятия."
-  );
-}
+export const BOT_TOKEN: string = "8001709362:AAEemeq8ZA4F1sBHaGBl2Um32lHhBOihl0k";
 
 // Типы для theme_json
 export interface ThemeContact {
