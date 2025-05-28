@@ -4,49 +4,42 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID } from '@/config';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, User, Clock } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
-interface Question {
+interface Speaker {
   id: string;
-  text: string;
-  author_name: string | null;
-  created_at: string;
-  is_anonymous: boolean | null;
-  is_answered: boolean | null;
-  is_approved: boolean | null;
+  name: string;
+  bio: string | null;
+  photo_url: string | null;
 }
 
 const QuestionsPage = () => {
   const [questionText, setQuestionText] = useState('');
-  const [authorName, setAuthorName] = useState('');
+  const [selectedSpeakerId, setSelectedSpeakerId] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const { data: questions, isLoading, error, refetch } = useQuery({
-    queryKey: ['questions', EVENT_ID],
+  const { data: speakers, isLoading } = useQuery({
+    queryKey: ['speakers', EVENT_ID],
     queryFn: async () => {
-      console.log('Fetching questions for EVENT_ID:', EVENT_ID);
+      console.log('Fetching speakers for EVENT_ID:', EVENT_ID);
       const { data, error } = await supabase
-        .from('questions')
+        .from('speakers')
         .select('*')
-        .eq('event_id', EVENT_ID)
-        .eq('is_approved', true)
-        .order('created_at', { ascending: false });
+        .eq('event_id', EVENT_ID);
 
       if (error) {
-        console.error('Error fetching questions:', error);
+        console.error('Error fetching speakers:', error);
         throw error;
       }
 
-      console.log('Questions data received:', data);
-      return data as Question[];
+      console.log('Speakers data received:', data);
+      return data as Speaker[];
     },
   });
 
@@ -60,10 +53,10 @@ const QuestionsPage = () => {
       return;
     }
 
-    if (!isAnonymous && !authorName.trim()) {
+    if (!selectedSpeakerId) {
       toast({
         title: "Ошибка",
-        description: "Введите ваше имя или выберите анонимный вопрос",
+        description: "Выберите спикера",
         variant: "destructive",
       });
       return;
@@ -76,10 +69,10 @@ const QuestionsPage = () => {
         .from('questions')
         .insert({
           event_id: EVENT_ID,
+          speaker_id: selectedSpeakerId,
           text: questionText.trim(),
-          author_name: isAnonymous ? null : authorName.trim(),
+          author_telegram_id: null, // Will be automatically filled from Telegram profile
           is_anonymous: isAnonymous,
-          is_approved: true, // Auto-approve for now
         });
 
       if (error) {
@@ -89,13 +82,12 @@ const QuestionsPage = () => {
 
       toast({
         title: "Успешно!",
-        description: "Ваш вопрос отправлен",
+        description: "Вопрос отправлен!",
       });
 
       setQuestionText('');
-      setAuthorName('');
+      setSelectedSpeakerId('');
       setIsAnonymous(false);
-      refetch();
     } catch (error) {
       console.error('Error submitting question:', error);
       toast({
@@ -110,154 +102,98 @@ const QuestionsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Вопросы
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-gray-300">Загрузка вопросов...</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (error) {
-    console.error('Questions page error:', error);
-    return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Вопросы
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-red-400">Ошибка загрузки вопросов</p>
-          <p className="text-sm text-gray-500 mt-2">Попробуйте обновить страницу</p>
-        </motion.div>
-      </div>
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-screen-sm mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Вопросы</h1>
+          <p className="text-center text-gray-500">Загрузка...</p>
+        </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <motion.h1 
-        className="text-3xl font-bold text-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        Вопросы
-      </motion.h1>
-      
-      <motion.div
-        className="space-y-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        {/* Question submission form */}
-        <Card className="bg-[var(--card-bg)] border-[var(--card-border)]">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <MessageCircle className="w-5 h-5 mr-2 text-[var(--app-primary)]" />
-              Задать вопрос
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <motion.div 
+      className="min-h-screen p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-screen-sm mx-auto">
+        <motion.h1 
+          className="text-2xl font-bold text-center mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          Вопросы
+        </motion.h1>
+        
+        <motion.div
+          className="bg-white rounded-xl shadow-sm p-6 space-y-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <div className="flex items-center mb-4">
+            <MessageCircle className="w-5 h-5 mr-2 text-[var(--app-primary)]" />
+            <h2 className="text-lg font-semibold">Задать вопрос</h2>
+          </div>
+
+          {/* Speaker select */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Спикер</label>
+            <select
+              value={selectedSpeakerId}
+              onChange={(e) => setSelectedSpeakerId(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--app-primary)] focus:border-transparent"
+            >
+              <option value="">Выберите спикера</option>
+              {speakers?.map((speaker) => (
+                <option key={speaker.id} value={speaker.id}>
+                  {speaker.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Question textarea */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Вопрос</label>
             <Textarea
               placeholder="Введите ваш вопрос..."
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
-              className="bg-[var(--input-bg)] border-[var(--input-border)] text-white placeholder-gray-400"
+              className="min-h-[100px] resize-none"
             />
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="anonymous"
-                checked={isAnonymous}
-                onCheckedChange={setIsAnonymous}
-              />
-              <label htmlFor="anonymous" className="text-sm text-gray-300">
-                Анонимный вопрос
-              </label>
-            </div>
-
-            {!isAnonymous && (
-              <Input
-                placeholder="Ваше имя"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                className="bg-[var(--input-bg)] border-[var(--input-border)] text-white placeholder-gray-400"
-              />
-            )}
-
-            <Button 
-              onClick={submitQuestion}
-              disabled={isSubmitting}
-              className="w-full bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white"
-            >
-              {isSubmitting ? 'Отправка...' : 'Отправить вопрос'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Questions list */}
-        {questions && questions.length > 0 ? (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-white">Заданные вопросы</h2>
-            {questions.map((question, index) => (
-              <motion.div
-                key={question.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <Card className="bg-[var(--card-bg)] border-[var(--card-border)] hover:shadow-lg transition-all duration-300 hover:shadow-[var(--app-primary)]/20">
-                  <CardContent className="pt-4">
-                    <p className="text-white mb-3">{question.text}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-400">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 mr-1" />
-                        {question.is_anonymous ? 'Анонимный вопрос' : question.author_name}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {new Date(question.created_at).toLocaleDateString('ru-RU')}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
           </div>
-        ) : (
-          <div className="text-center py-10">
-            <p className="text-gray-300">Вопросов пока нет</p>
-            <p className="text-sm text-gray-500 mt-2">Будьте первым, кто задаст вопрос!</p>
+          
+          {/* Anonymous checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="anonymous"
+              checked={isAnonymous}
+              onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+            />
+            <label htmlFor="anonymous" className="text-sm text-gray-700">
+              Задать анонимно
+            </label>
           </div>
-        )}
-      </motion.div>
-    </div>
+
+          <Button 
+            onClick={submitQuestion}
+            disabled={isSubmitting}
+            className="w-full bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white"
+          >
+            {isSubmitting ? 'Отправка...' : 'Отправить'}
+          </Button>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 };
 

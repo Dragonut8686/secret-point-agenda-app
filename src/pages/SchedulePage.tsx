@@ -1,10 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID } from '@/config';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, User } from 'lucide-react';
 
 interface Session {
@@ -23,6 +22,8 @@ interface Session {
 }
 
 const SchedulePage = () => {
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['sessions', EVENT_ID],
     queryFn: async () => {
@@ -53,156 +54,160 @@ const SchedulePage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Программа
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-gray-300">Загрузка программы...</p>
-        </motion.div>
-      </div>
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-screen-sm mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Программа</h1>
+          <p className="text-center text-gray-500">Загрузка программы...</p>
+        </div>
+      </motion.div>
     );
   }
 
   if (error) {
     console.error('Schedule page error:', error);
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Программа
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-red-400">Ошибка загрузки программы</p>
-          <p className="text-sm text-gray-500 mt-2">Попробуйте обновить страницу</p>
-        </motion.div>
-      </div>
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-screen-sm mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Программа</h1>
+          <p className="text-center text-red-500">Ошибка загрузки программы</p>
+        </div>
+      </motion.div>
     );
   }
 
   if (!sessions || sessions.length === 0) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-screen-sm mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Программа</h1>
+          <p className="text-center text-gray-500">Программа пока не опубликована</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Get unique days
+  const uniqueDays = Array.from(new Set(sessions.map(session => session.day).filter(Boolean)));
+  const currentSelectedDay = selectedDay || uniqueDays[0];
+
+  // Filter sessions by selected day
+  const filteredSessions = sessions.filter(session => session.day === currentSelectedDay);
+
+  return (
+    <motion.div 
+      className="min-h-screen p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-screen-sm mx-auto">
         <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
+          className="text-2xl font-bold text-center mb-6"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           Программа
         </motion.h1>
         
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+        {/* Day filter buttons */}
+        {uniqueDays.length > 1 && (
+          <motion.div 
+            className="flex flex-wrap gap-2 justify-center mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            {uniqueDays.map((day, index) => (
+              <motion.button
+                key={day}
+                onClick={() => setSelectedDay(day)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  currentSelectedDay === day
+                    ? 'bg-[var(--app-primary)] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {day}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Sessions list */}
+        <motion.div 
+          className="space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <p className="text-lg text-gray-300">Программа пока не опубликована</p>
-          <p className="text-sm text-gray-500 mt-2">Следите за обновлениями</p>
+          {filteredSessions.length > 0 ? (
+            filteredSessions.map((session, index) => (
+              <motion.div
+                key={session.id}
+                className="bg-white text-black rounded-xl shadow-sm p-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, shadow: 'lg' }}
+              >
+                {(session.time_from || session.time_to) && (
+                  <div className="flex items-center text-gray-600 text-sm mb-2">
+                    <Clock className="w-4 h-4 mr-2" />
+                    {session.time_from && session.time_to 
+                      ? `${session.time_from} – ${session.time_to}`
+                      : session.time_from || session.time_to
+                    }
+                  </div>
+                )}
+                
+                <h3 className="font-bold text-lg mb-2">{session.title}</h3>
+                
+                {session.speakers && (
+                  <div className="flex items-center text-gray-700 mb-2">
+                    <User className="w-4 h-4 mr-2" />
+                    <span className="font-medium">{session.speakers.name}</span>
+                  </div>
+                )}
+                
+                {session.description && (
+                  <p className="text-gray-500 text-sm">{session.description}</p>
+                )}
+              </motion.div>
+            ))
+          ) : (
+            <motion.p 
+              className="text-center text-gray-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              Нет запланированных сессий
+            </motion.p>
+          )}
         </motion.div>
       </div>
-    );
-  }
-
-  // Group sessions by day
-  const sessionsByDay = sessions.reduce((acc, session) => {
-    const day = session.day || 'Без даты';
-    if (!acc[day]) {
-      acc[day] = [];
-    }
-    acc[day].push(session);
-    return acc;
-  }, {} as Record<string, Session[]>);
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <motion.h1 
-        className="text-3xl font-bold text-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        Программа
-      </motion.h1>
-      
-      <motion.div
-        className="space-y-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        {Object.entries(sessionsByDay).map(([day, daySessions], dayIndex) => (
-          <motion.div 
-            key={day}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: dayIndex * 0.1 }}
-          >
-            <h2 className="text-2xl font-semibold mb-4 text-[var(--app-primary)]">{day}</h2>
-            <div className="space-y-4">
-              {daySessions.map((session, sessionIndex) => (
-                <motion.div
-                  key={session.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: (dayIndex * 0.1) + (sessionIndex * 0.05) }}
-                >
-                  <Card className="bg-[var(--card-bg)] border-[var(--card-border)] hover:shadow-lg transition-all duration-300 hover:shadow-[var(--app-primary)]/20">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center justify-between flex-wrap gap-2">
-                        <span>{session.title}</span>
-                        {(session.time_from || session.time_to) && (
-                          <span className="flex items-center text-[var(--app-primary)] text-sm font-medium">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {session.time_from && session.time_to 
-                              ? `${session.time_from} - ${session.time_to}`
-                              : session.time_from || session.time_to
-                            }
-                          </span>
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {session.description && (
-                        <p className="text-gray-300">{session.description}</p>
-                      )}
-                      {session.speakers && (
-                        <div className="flex items-center text-[var(--app-primary)]">
-                          <User className="w-4 h-4 mr-2" />
-                          <span className="font-medium">{session.speakers.name}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
+    </motion.div>
   );
 };
 

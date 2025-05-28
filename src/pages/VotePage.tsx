@@ -4,10 +4,9 @@ import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID } from '@/config';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy, Heart, Play, Image as ImageIcon } from 'lucide-react';
+import { Trophy, Heart } from 'lucide-react';
 
 interface Work {
   id: string;
@@ -46,10 +45,13 @@ const VotePage = () => {
 
   const voteMutation = useMutation({
     mutationFn: async (workId: string) => {
+      const work = works?.find(w => w.id === workId);
+      if (!work) throw new Error('Work not found');
+
       const { data, error } = await supabase
         .from('works')
         .update({ 
-          votes_count: works?.find(w => w.id === workId)?.votes_count! + 1 
+          votes_count: work.votes_count + 1 
         })
         .eq('id', workId)
         .select()
@@ -66,7 +68,7 @@ const VotePage = () => {
       setVotedWorks(prev => new Set([...prev, workId]));
       queryClient.invalidateQueries({ queryKey: ['works', EVENT_ID] });
       toast({
-        title: "Голос засчитан!",
+        title: "Ваш голос учтён!",
         description: "Спасибо за участие в голосовании",
       });
     },
@@ -84,7 +86,7 @@ const VotePage = () => {
     if (votedWorks.has(workId)) {
       toast({
         title: "Вы уже голосовали",
-        description: "За эту работу уже можно голосовать только один раз",
+        description: "За эту работу можно голосовать только один раз",
         variant: "destructive",
       });
       return;
@@ -94,60 +96,64 @@ const VotePage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Конкурс
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-gray-300">Загрузка работ...</p>
-        </motion.div>
-      </div>
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
+          <p className="text-center text-gray-500">Загрузка работ...</p>
+        </div>
+      </motion.div>
     );
   }
 
   if (error) {
     console.error('Vote page error:', error);
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Конкурс
-        </motion.h1>
-        
-        <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <p className="text-lg text-red-400">Ошибка загрузки конкурса</p>
-          <p className="text-sm text-gray-500 mt-2">Попробуйте обновить страницу</p>
-        </motion.div>
-      </div>
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
+          <p className="text-center text-red-500">Ошибка загрузки конкурса</p>
+        </div>
+      </motion.div>
     );
   }
 
   if (!works || works.length === 0) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <motion.div 
+        className="min-h-screen p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
+          <p className="text-center text-gray-500">Конкурсные работы пока не загружены</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div 
+      className="min-h-screen p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-4xl mx-auto">
         <motion.h1 
-          className="text-3xl font-bold text-center"
-          initial={{ opacity: 0, y: -20 }}
+          className="text-2xl font-bold text-center mb-6"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
@@ -155,128 +161,87 @@ const VotePage = () => {
         </motion.h1>
         
         <motion.div
-          className="text-center py-20"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <p className="text-lg text-gray-300">Конкурсные работы пока не загружены</p>
-          <p className="text-sm text-gray-500 mt-2">Следите за обновлениями!</p>
+          <div className="flex items-center justify-center mb-4">
+            <Trophy className="w-8 h-8 text-[var(--app-primary)] mr-2" />
+            <p className="text-lg text-gray-700">Голосуйте за лучшие работы</p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="grid gap-6 md:grid-cols-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          {works.map((work, index) => (
+            <motion.div
+              key={work.id}
+              className="bg-white text-black rounded-xl shadow-sm p-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              whileHover={{ scale: 1.02, shadow: 'lg' }}
+            >
+              {work.photo_url && (
+                <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden mb-4">
+                  <img 
+                    src={work.photo_url} 
+                    alt={work.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                          <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                          </svg>
+                        </div>
+                      `;
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-lg">{work.title}</h3>
+                <div className="flex items-center text-[var(--app-primary)]">
+                  <Heart className="w-4 h-4 mr-1" />
+                  <span className="font-bold">{work.votes_count}</span>
+                </div>
+              </div>
+
+              {work.author_name && (
+                <p className="text-[var(--app-primary)] font-medium mb-2">
+                  Автор: {work.author_name}
+                </p>
+              )}
+
+              {work.description && (
+                <p className="text-gray-600 text-sm mb-4">{work.description}</p>
+              )}
+
+              <Button 
+                onClick={() => handleVote(work.id)}
+                disabled={votedWorks.has(work.id) || voteMutation.isPending}
+                className={`w-full ${
+                  votedWorks.has(work.id) 
+                    ? 'bg-gray-400 text-gray-600' 
+                    : 'bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white'
+                }`}
+              >
+                <Heart className={`w-4 h-4 mr-2 ${votedWorks.has(work.id) ? 'fill-current' : ''}`} />
+                {votedWorks.has(work.id) ? 'Вы проголосовали' : 'Голосовать'}
+              </Button>
+            </motion.div>
+          ))}
         </motion.div>
       </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <motion.h1 
-        className="text-3xl font-bold text-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        Конкурс
-      </motion.h1>
-      
-      <motion.div
-        className="text-center mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <div className="flex items-center justify-center mb-4">
-          <Trophy className="w-8 h-8 text-[var(--app-primary)] mr-2" />
-          <p className="text-lg text-gray-300">Голосуйте за лучшие работы</p>
-        </div>
-        <p className="text-sm text-gray-500">Нажмите на сердечко, чтобы проголосовать</p>
-      </motion.div>
-
-      <motion.div
-        className="grid gap-6 md:grid-cols-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        {works.map((work, index) => (
-          <motion.div
-            key={work.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <Card className="bg-[var(--card-bg)] border-[var(--card-border)] hover:shadow-lg transition-all duration-300 hover:shadow-[var(--app-primary)]/20 h-full">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
-                  <span className="truncate">{work.title}</span>
-                  <div className="flex items-center text-[var(--app-primary)] ml-2">
-                    <Heart className="w-4 h-4 mr-1" />
-                    <span className="font-bold">{work.votes_count}</span>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {work.photo_url && (
-                  <div className="relative w-full h-48 bg-gray-800 rounded-lg overflow-hidden">
-                    <img 
-                      src={work.photo_url} 
-                      alt={work.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `
-                          <div class="w-full h-full flex items-center justify-center text-gray-400">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                              <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                            </svg>
-                          </div>
-                        `;
-                      }}
-                    />
-                  </div>
-                )}
-
-                {work.video_url && (
-                  <div className="flex items-center text-[var(--app-primary)]">
-                    <Play className="w-4 h-4 mr-2" />
-                    <a 
-                      href={work.video_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm hover:underline"
-                    >
-                      Посмотреть видео
-                    </a>
-                  </div>
-                )}
-
-                {work.author_name && (
-                  <p className="text-[var(--app-primary)] font-medium">
-                    Автор: {work.author_name}
-                  </p>
-                )}
-
-                {work.description && (
-                  <p className="text-gray-300 text-sm">{work.description}</p>
-                )}
-
-                <Button 
-                  onClick={() => handleVote(work.id)}
-                  disabled={votedWorks.has(work.id) || voteMutation.isPending}
-                  className={`w-full ${
-                    votedWorks.has(work.id) 
-                      ? 'bg-gray-600 text-gray-400' 
-                      : 'bg-[var(--app-primary)] hover:bg-[var(--app-primary)]/80 text-white'
-                  }`}
-                >
-                  <Heart className={`w-4 h-4 mr-2 ${votedWorks.has(work.id) ? 'fill-current' : ''}`} />
-                  {votedWorks.has(work.id) ? 'Вы проголосовали' : 'Голосовать'}
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
+    </motion.div>
   );
 };
 
