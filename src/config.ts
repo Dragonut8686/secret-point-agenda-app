@@ -18,8 +18,8 @@ export interface ThemeContact {
 }
 
 export interface ThemeMainButton {
-  title: string;
-  path: string;
+  label: string; // Изменено с title на label
+  page: string;  // Изменено с path на page (будет хранить, например, "SchedulePage")
   icon?: string; // Можно добавить иконки для кнопок главного меню
 }
 
@@ -31,3 +31,4 @@ export interface ThemeJson {
   map_url?: string;
   contacts?: ThemeContact[];
 }
+

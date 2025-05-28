@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +24,21 @@ const fetchEventDetails = async () => {
   return data as { name: string; theme_json: ThemeJson | null };
 };
 
+const pageToPath = (pageName?: string): string => {
+  if (!pageName) return '#';
+  switch (pageName) {
+    case "SchedulePage": return "/schedule";
+    case "QuestionsPage": return "/questions";
+    case "VotePage": return "/vote";
+    case "HotelServicesPage": return "/hotel-services";
+    case "HotelMapPage": return "/hotel-map";
+    case "ContactsPage": return "/contacts";
+    default:
+      console.warn(`Unknown page name: ${pageName}`);
+      return "#"; // Fallback for unknown pages
+  }
+};
+
 const HomePage = () => {
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['eventDetails', EVENT_ID], 
@@ -36,7 +50,6 @@ const HomePage = () => {
   }
 
   if (error || !event) {
-    // Log the error for debugging if it's an actual error object
     if (error) console.error("Error loading event data:", error);
     return <div className="flex justify-center items-center h-screen"><p>Error loading event details. Please check EVENT_ID and Supabase connection.</p></div>;
   }
@@ -49,7 +62,7 @@ const HomePage = () => {
         <img 
           src={theme.banner_url} 
           alt={event.name ? `${event.name} Banner` : 'Event Banner'} 
-          className="w-full h-48 object-cover shadow-lg" // Removed rounded-lg
+          className="w-full h-48 object-cover shadow-lg"
         />
       )}
       {theme.logo_url && (
@@ -64,15 +77,15 @@ const HomePage = () => {
       <nav className="w-full max-w-xs">
         <ul className="space-y-3">
           {theme.main_buttons && theme.main_buttons.length > 0 ? (
-            theme.main_buttons.map((button: ThemeMainButton, index: number) => ( // Added index for key if paths aren't unique
-              <li key={button.path || `button-${index}`}> {/* Fallback key if path is not defined */}
+            theme.main_buttons.map((button: ThemeMainButton, index: number) => (
+              <li key={button.page || `button-${index}`}>
                 <Button asChild variant="default" className="w-full bg-[var(--app-primary)] hover:bg-opacity-80 text-white py-3 text-lg">
-                  <Link to={button.path || '#'}>{button.title || `Button ${index + 1}`}</Link> {/* Fallback title and path */}
+                  <Link to={pageToPath(button.page)}>{button.label || `Button ${index + 1}`}</Link>
                 </Button>
               </li>
             ))
           ) : (
-            <Card className="p-4 bg-card border-border text-card-foreground"> {/* Use theme variables for card */}
+            <Card className="p-4 bg-card border-border text-card-foreground">
               <p>No navigation buttons configured for this event.</p>
               <p className="text-sm text-muted-foreground mt-2">Please check the 'theme_json.main_buttons' in your Supabase event data.</p>
             </Card>
@@ -84,4 +97,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
