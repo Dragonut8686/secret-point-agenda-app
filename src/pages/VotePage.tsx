@@ -18,30 +18,29 @@ interface Work {
 }
 
 const VotePage = () => {
-  const telegram_id = getTelegramId();
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const telegram_id = getTelegramId();
 
-  // 1) Получаем работы
-  const { data: works, isLoading: loadingWorks } = useQuery<Work[]>({
+  const { data: works, isLoading: isWorksLoading, error: worksError } = useQuery<Work[]>({
     queryKey: ['works', EVENT_ID],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('works')
         .select('*')
         .eq('event_id', EVENT_ID)
-        .order('created_at', { ascending: false });
+        .order('id', { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
-  // 2) Получаем голоса текущего пользователя
-  useQuery<string[]>({
+  const { data: votes, isLoading: isVotesLoading, error: votesError } = useQuery<string[]>({
     queryKey: ['votes', EVENT_ID, telegram_id],
-    enabled: Boolean(telegram_id),
+    enabled: !!telegram_id,
     queryFn: async () => {
+      if (!telegram_id) throw new Error('Telegram ID не найден');
       const { data, error } = await supabase
         .from('votes')
         .select('work_id')
@@ -49,104 +48,108 @@ const VotePage = () => {
         .eq('telegram_id', telegram_id);
       if (error) throw error;
       return data.map(v => v.work_id);
-    },
-    onSuccess: (ids) => setUserVotes(new Set(ids)),
+    }
   });
 
-  // 3) Мутация голосования/отмены
-  const { mutate: toggleVote, isLoading: toggling } = useMutation<
-    void,
-    Error,
-    string
-  >({
-    mutationFn: async (workId) => {
-      if (!telegram_id) throw new Error('Откройте через Telegram');
-      const has = userVotes.has(workId);
+  useEffect(() => {
+    if (votes) {
+      setUserVotes(new Set(votes));
+      console.log('Loaded user votes:', votes);
+    }
+  }, [votes]);
 
-      // Удаляем/добавляем запись в votes
-      if (has) {
-        await supabase
-          .from('votes')
-          .delete()
+  const voteMutation = useMutation<{ workId: string; action: 'added' | 'removed' }, Error, string>({
+    mutationFn: async workId => {
+      if (!telegram_id) throw new Error('Telegram ID не найден');
+      const work = works?.find(w => w.id === workId);
+      if (!work) throw new Error('Work not found');
+      if (userVotes.has(workId)) {
+        await supabase.from('votes').delete()
           .eq('event_id', EVENT_ID)
           .eq('work_id', workId)
           .eq('telegram_id', telegram_id);
+        await supabase.from('works')
+          .update({ votes_count: work.votes_count - 1 })
+          .eq('id', workId);
+        return { workId, action: 'removed' };
       } else {
-        await supabase
-          .from('votes')
-          .insert({ event_id: EVENT_ID, work_id: workId, telegram_id });
+        await supabase.from('votes').insert({ event_id: EVENT_ID, work_id: workId, telegram_id });
+        await supabase.from('works')
+          .update({ votes_count: work.votes_count + 1 })
+          .eq('id', workId);
+        return { workId, action: 'added' };
       }
-
-      // Обновляем счётчик в works
-      const work = works?.find(w => w.id === workId);
-      const delta = has ? -1 : 1;
-      await supabase
-        .from('works')
-        .update({ votes_count: (work?.votes_count || 0) + delta })
-        .eq('id', workId);
     },
-    onSuccess: (_, workId) => {
+    onSuccess: ({ workId, action }) => {
       setUserVotes(prev => {
-        const copy = new Set(prev);
-        userVotes.has(workId) ? copy.delete(workId) : copy.add(workId);
-        return copy;
+        const updated = new Set(prev);
+        action === 'added' ? updated.add(workId) : updated.delete(workId);
+        return updated;
       });
       queryClient.invalidateQueries(['works', EVENT_ID]);
       queryClient.invalidateQueries(['votes', EVENT_ID, telegram_id]);
       toast({
-        title: 'Ок',
-        description: userVotes.has(workId)
-          ? 'Голос удалён'
-          : 'Голос учтён',
+        title: action === 'added' ? 'Голос учтён!' : 'Голос удалён',
+        description: action === 'added' ? 'Спасибо!' : 'Отменено',
       });
     },
-    onError: (err) => {
-      toast({ title: 'Ошибка', description: err.message, variant: 'destructive' });
-    },
+    onError: error => {
+      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+    }
   });
 
+  const handleVote = (workId: string) => {
+    console.log('Voting on:', workId);
+    voteMutation.mutate(workId);
+  };
+
+  console.log('Rendering VotePage, works=', works);
+
   if (!telegram_id) {
-    return <div className="p-6 text-center text-red-500">Откройте приложение через Telegram</div>;
+    return (
+      <div className="text-center p-6">
+        <p className="text-red-500 mb-4">Telegram ID не найден</p>
+        <p className="text-gray-600">Пожалуйста, откройте приложение через Telegram</p>
+      </div>
+    );
   }
-  if (loadingWorks) {
-    return <div className="p-6 text-center">Загрузка…</div>;
-  }
-  if (!works || works.length === 0) {
-    return <div className="p-6 text-center">Нет работ для голосования</div>;
-  }
+  if (isWorksLoading || isVotesLoading) return <div className="text-center p-6">Загрузка...</div>;
+  if (worksError || votesError) return <div className="text-center p-6 text-red-500">Ошибка загрузки</div>;
+  if (!works || works.length === 0) return <div className="text-center p-6">Нет работ</div>;
 
   return (
     <motion.div className="min-h-screen p-4">
-      <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
-      <div className="grid gap-6 md:grid-cols-2">
-        {works.map(work => {
-          const has = userVotes.has(work.id);
-          return (
-            <motion.div 
-              key={work.id} 
-              className="bg-white rounded-xl shadow p-4 flex flex-col"
-            >
-              {work.photo_url && (
-                <img src={work.photo_url} alt="" className="w-full h-48 object-cover rounded mb-4" />
-              )}
-              <h3 className="font-bold mb-1">{work.title}</h3>
-              {work.author_name && <p className="text-sm mb-2">Автор: {work.author_name}</p>}
-              <div className="mt-auto flex items-center justify-between">
-                <div className="flex items-center text-lg text-[var(--app-primary)]">
-                  <Heart className="mr-1" /> {work.votes_count}
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold text-center mb-6">Конкурс</h1>
+        <div className="grid gap-6 md:grid-cols-2">
+          {works.map(work => {
+            const hasVoted = userVotes.has(work.id);
+            return (
+              <motion.div key={work.id} className="bg-white rounded-xl shadow-sm p-4 flex flex-col">
+                {work.photo_url ? (
+                  <img src={work.photo_url} alt={work.title} className="w-full h-48 object-cover rounded-md mb-4" />
+                ) : (
+                  <div className="w-full h-48 bg-gray-200 rounded-md mb-4 flex items-center justify-center">
+                    <span className="text-gray-500">No image</span>
+                  </div>
+                )}
+                <h3 className="text-lg font-bold mb-1">{work.title}</h3>
+                {work.author_name && <p className="text-sm text-gray-600 mb-2">Автор: {work.author_name}</p>}
+                {work.description && <p className="text-sm text-gray-500 mb-4">{work.description}</p>}
+                <div className="mt-auto flex items-center justify-between">
+                  <div className="flex items-center text-[var(--app-primary)]">
+                    <Heart className="w-5 h-5 mr-1" />
+                    <span>{work.votes_count}</span>
+                  </div>
+                  <Button onClick={() => handleVote(work.id)} disabled={voteMutation.isPending}>
+                    <Trophy className="w-4 h-4 mr-2" />
+                    {hasVoted ? 'Отменить' : 'Голосовать'}
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => toggleVote(work.id)}
-                  disabled={toggling}
-                  variant={has ? 'secondary' : 'default'}
-                >
-                  <Trophy className="mr-2" />
-                  {has ? 'Отменить' : 'Голосовать'}
-                </Button>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </motion.div>
   );
