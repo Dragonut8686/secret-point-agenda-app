@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User } from 'lucide-react';
 
+const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
 interface Speaker {
   id: string;
   name: string;
@@ -69,7 +71,11 @@ const QuestionsPage = () => {
         .invoke('notify_speaker', {
           body: JSON.stringify({
             speaker_id: selectedSpeakerId,
-            text: `У вас новый вопрос:\n\n${questionText.trim()}`
+            text: questionText.trim(),
+            asker_name: `${user?.first_name || ''}${user?.last_name ? ' ' + user.last_name : ''}`,
+            asker_username: user?.username || null,
+            is_anonymous: isAnonymous,
+            timestamp: new Date().toISOString(),
           })
         });
 
