@@ -31,7 +31,7 @@ const QuestionsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // 1) Загружаем список спикеров
+  // 1) Загружаем спикеров
   const { data: speakers, isLoading } = useQuery({
     queryKey: ['speakers', EVENT_ID],
     queryFn: async () => {
@@ -44,7 +44,7 @@ const QuestionsPage = () => {
     },
   });
 
-  // 2) Обработчик отправки вопроса
+  // 2) Отправка вопроса
   const submitQuestion = async () => {
     if (!questionText.trim()) {
       toast({
@@ -65,6 +65,14 @@ const QuestionsPage = () => {
 
     setIsSubmitting(true);
     try {
+      // приводим user.id (number) к строке
+      const telegramIdStr = user?.id ? String(user.id) : null;
+      const authorName =
+        !isAnonymous && user
+          ? `${user.first_name || ''}${user.last_name ? ' ' + user.last_name : ''}`.trim()
+          : null;
+      const authorUsername = !isAnonymous ? user?.username ?? null : null;
+
       // 2.1) Вставляем в questions все поля
       const { error: insertError } = await supabase
         .from('questions')
@@ -72,11 +80,9 @@ const QuestionsPage = () => {
           event_id: EVENT_ID,
           speaker_id: selectedSpeakerId,
           text: questionText.trim(),
-          author_telegram_id: user?.id ?? null,
-          author_name: isAnonymous
-            ? null
-            : `${user?.first_name || ''}${user?.last_name ? ' ' + user.last_name : ''}`.trim(),
-          author_username: isAnonymous ? null : user?.username ?? null,
+          author_telegram_id: telegramIdStr,
+          author_name: authorName,
+          author_username: authorUsername,
           is_anonymous: isAnonymous,
         });
       if (insertError) throw insertError;
@@ -86,10 +92,8 @@ const QuestionsPage = () => {
         body: JSON.stringify({
           speaker_id: selectedSpeakerId,
           text: questionText.trim(),
-          asker_name: `${user?.first_name || ''}${
-            user?.last_name ? ' ' + user.last_name : ''
-          }`.trim(),
-          asker_username: user?.username || null,
+          asker_name: authorName,
+          asker_username: authorUsername,
           is_anonymous: isAnonymous,
           timestamp: new Date().toISOString(),
         }),
@@ -145,9 +149,7 @@ const QuestionsPage = () => {
             <MessageCircle className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Задать вопрос</h1>
-          <p className="text-gray-400">
-            Отправьте вопрос спикеру и получите ответ
-          </p>
+          <p className="text-gray-400">Отправьте вопрос спикеру и получите ответ</p>
         </motion.div>
 
         {/* Form Card */}
@@ -204,7 +206,7 @@ const QuestionsPage = () => {
             </div>
 
             {/* Anonymous Option */}
-            <div className="flex items-center space-x-3 p-4 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center space-x-3 p-4.bg-white/5 rounded-xl border border-white/10">
               <Checkbox
                 id="anonymous"
                 checked={isAnonymous}
