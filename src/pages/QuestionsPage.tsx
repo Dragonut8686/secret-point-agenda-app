@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -7,7 +6,13 @@ import { EVENT_ID } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User } from 'lucide-react';
 
@@ -26,7 +31,7 @@ const QuestionsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Выбираем спикеров вместе с их telegram_id
+  // 1) Загружаем список спикеров
   const { data: speakers, isLoading } = useQuery({
     queryKey: ['speakers', EVENT_ID],
     queryFn: async () => {
@@ -34,60 +39,73 @@ const QuestionsPage = () => {
         .from('speakers')
         .select('id, name, telegram_id')
         .eq('event_id', EVENT_ID);
-
       if (error) throw error;
       return data as Speaker[];
     },
   });
 
+  // 2) Обработчик отправки вопроса
   const submitQuestion = async () => {
     if (!questionText.trim()) {
-      toast({ title: "Ошибка", description: "Введите текст вопроса", variant: "destructive" });
+      toast({
+        title: 'Ошибка',
+        description: 'Введите текст вопроса',
+        variant: 'destructive',
+      });
       return;
     }
     if (!selectedSpeakerId) {
-      toast({ title: "Ошибка", description: "Выберите спикера", variant: "destructive" });
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите спикера',
+        variant: 'destructive',
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Сохраняем вопрос в базе данных
+      // 2.1) Вставляем в questions все поля
       const { error: insertError } = await supabase
         .from('questions')
         .insert({
           event_id: EVENT_ID,
           speaker_id: selectedSpeakerId,
           text: questionText.trim(),
-          author_telegram_id: null,
+          author_telegram_id: user?.id ?? null,
+          author_name: isAnonymous
+            ? null
+            : `${user?.first_name || ''}${user?.last_name ? ' ' + user.last_name : ''}`.trim(),
+          author_username: isAnonymous ? null : user?.username ?? null,
           is_anonymous: isAnonymous,
         });
-
       if (insertError) throw insertError;
 
-      // Вызываем серверную функцию для уведомления спикера
-      await supabase
-        .functions
-        .invoke('notify_speaker', {
-          body: JSON.stringify({
-            speaker_id: selectedSpeakerId,
-            text: questionText.trim(),
-            asker_name: `${user?.first_name || ''}${user?.last_name ? ' ' + user.last_name : ''}`,
-            asker_username: user?.username || null,
-            is_anonymous: isAnonymous,
-            timestamp: new Date().toISOString(),
-          })
-        });
+      // 2.2) Уведомляем спикера
+      await supabase.functions.invoke('notify_speaker', {
+        body: JSON.stringify({
+          speaker_id: selectedSpeakerId,
+          text: questionText.trim(),
+          asker_name: `${user?.first_name || ''}${
+            user?.last_name ? ' ' + user.last_name : ''
+          }`.trim(),
+          asker_username: user?.username || null,
+          is_anonymous: isAnonymous,
+          timestamp: new Date().toISOString(),
+        }),
+      });
 
-      toast({ title: "Успешно!", description: "Вопрос отправлен!" });
-
-      // Сброс полей
+      toast({ title: 'Успешно!', description: 'Вопрос отправлен!' });
       setQuestionText('');
       setSelectedSpeakerId('');
       setIsAnonymous(false);
     } catch (err: any) {
       console.error(err);
-      toast({ title: "Ошибка", description: "Не удалось отправить вопрос", variant: "destructive" });
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось отправить вопрос',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -95,9 +113,9 @@ const QuestionsPage = () => {
 
   if (isLoading) {
     return (
-      <motion.div 
-        className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4 flex items-center justify-center" 
-        initial={{ opacity: 0 }} 
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4 flex items-center justify-center"
+        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         <div className="text-center">
@@ -109,15 +127,15 @@ const QuestionsPage = () => {
   }
 
   return (
-    <motion.div 
-      className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4" 
-      initial={{ opacity: 0, y: 20 }} 
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
       <div className="max-w-lg mx-auto pt-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,11 +145,13 @@ const QuestionsPage = () => {
             <MessageCircle className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Задать вопрос</h1>
-          <p className="text-gray-400">Отправьте вопрос спикеру и получите ответ</p>
+          <p className="text-gray-400">
+            Отправьте вопрос спикеру и получите ответ
+          </p>
         </motion.div>
 
         {/* Form Card */}
-        <motion.div 
+        <motion.div
           className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 shadow-2xl"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -144,14 +164,17 @@ const QuestionsPage = () => {
                 <User className="w-4 h-4 text-[var(--app-primary)]" />
                 Выберите спикера
               </label>
-              <Select value={selectedSpeakerId} onValueChange={setSelectedSpeakerId}>
+              <Select
+                value={selectedSpeakerId}
+                onValueChange={setSelectedSpeakerId}
+              >
                 <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-12">
                   <SelectValue placeholder="Выберите спикера из списка" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  {speakers?.map(speaker => (
-                    <SelectItem 
-                      key={speaker.id} 
+                  {speakers?.map((speaker) => (
+                    <SelectItem
+                      key={speaker.id}
                       value={speaker.id}
                       className="text-white hover:bg-slate-700 focus:bg-slate-700"
                     >
@@ -171,7 +194,7 @@ const QuestionsPage = () => {
               <Textarea
                 placeholder="Опишите ваш вопрос подробно..."
                 value={questionText}
-                onChange={e => setQuestionText(e.target.value)}
+                onChange={(e) => setQuestionText(e.target.value)}
                 className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
                 maxLength={500}
               />
@@ -185,7 +208,7 @@ const QuestionsPage = () => {
               <Checkbox
                 id="anonymous"
                 checked={isAnonymous}
-                onCheckedChange={c => setIsAnonymous(c === true)}
+                onCheckedChange={(c) => setIsAnonymous(c === true)}
                 className="border-white/30 data-[state=checked]:bg-[var(--app-primary)] data-[state=checked]:border-[var(--app-primary)]"
               />
               <label htmlFor="anonymous" className="text-sm text-gray-200 flex-1">
@@ -194,9 +217,11 @@ const QuestionsPage = () => {
             </div>
 
             {/* Submit Button */}
-            <Button 
-              onClick={submitQuestion} 
-              disabled={isSubmitting || !questionText.trim() || !selectedSpeakerId}
+            <Button
+              onClick={submitQuestion}
+              disabled={
+                isSubmitting || !questionText.trim() || !selectedSpeakerId
+              }
               className="w-full bg-gradient-to-r from-[var(--app-primary)] to-purple-600 hover:from-[var(--app-primary)]/90 hover:to-purple-600/90 text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
@@ -215,7 +240,7 @@ const QuestionsPage = () => {
         </motion.div>
 
         {/* Info Card */}
-        <motion.div 
+        <motion.div
           className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
