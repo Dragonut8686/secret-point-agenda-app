@@ -1,4 +1,5 @@
 
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -9,7 +10,6 @@ import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 import Layout from "./components/Layout";
-import Navigation from "./components/Navigation";
 import HomePage from "./pages/HomePage";
 import SchedulePage from "./pages/SchedulePage";
 import QuestionsPage from "./pages/QuestionsPage";
@@ -83,7 +83,6 @@ const App = () => {
           <Layout>
             <AnimatedRoutes />
           </Layout>
-          <Navigation />
         </TooltipProvider>
       </BrowserRouter>
     </QueryClientProvider>
@@ -91,3 +90,4 @@ const App = () => {
 };
 
 export default App;
+

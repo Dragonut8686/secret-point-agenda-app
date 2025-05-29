@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -25,7 +26,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       )}
       <motion.div 
-        className={`w-full ${isHomePage ? 'flex-grow flex items-center justify-center' : 'flex-1'} px-4 pb-8`}
+        className={`w-full ${isHomePage ? 'flex-grow flex items-center justify-center' : 'flex-1'} px-4`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
@@ -38,3 +39,4 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default Layout;
+

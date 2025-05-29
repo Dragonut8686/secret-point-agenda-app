@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,7 @@ const pageToPath = (pageName?: string): string => {
   switch (pageName) {
     case "SchedulePage": return "/schedule";
     case "QuestionsPage": return "/questions";
+    case "QuestionsListPage": return "/questions-list";
     case "VotePage": return "/vote";
     case "HotelServicesPage": return "/hotel-services";
     case "HotelMapPage": return "/hotel-map";
@@ -123,21 +125,24 @@ const HomePage = () => {
       >
         <ul className="space-y-4">
           {theme.main_buttons && theme.main_buttons.length > 0 ? (
-            theme.main_buttons.map((button: ThemeMainButton, index: number) => (
-              <motion.li key={button.page || `button-${index}`} variants={item}>
-                <Button 
-                  asChild 
-                  variant="default" 
-                  className="w-full bg-gradient-to-r from-[#3F2B96] to-[#5643cc] hover:from-[#4e37b0] hover:to-[#6651e0] text-white py-4 text-lg relative overflow-hidden group shadow-[0_0_20px_rgba(63,43,150,0.3)] hover:shadow-[0_0_30px_rgba(63,43,150,0.6)] transition-all duration-300 border-0 rounded-xl backdrop-blur-sm"
-                >
-                  <Link to={pageToPath(button.page)} className="flex items-center justify-center w-full h-full z-10">
-                    <span className="relative z-10 font-medium">{button.label || `Button ${index + 1}`}</span>
-                    <span className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
-                  </Link>
-                </Button>
-              </motion.li>
-            ))
+            theme.main_buttons.map((button: ThemeMainButton, index: number) => {
+              const targetPath = pageToPath(button.page);
+              return (
+                <motion.li key={button.page || `button-${index}`} variants={item}>
+                  <Button 
+                    asChild 
+                    variant="default" 
+                    className="w-full bg-gradient-to-r from-[#3F2B96] to-[#5643cc] hover:from-[#4e37b0] hover:to-[#6651e0] text-white py-4 text-lg relative overflow-hidden group shadow-[0_0_20px_rgba(63,43,150,0.3)] hover:shadow-[0_0_30px_rgba(63,43,150,0.6)] transition-all duration-300 border-0 rounded-xl backdrop-blur-sm"
+                  >
+                    <Link to={targetPath} className="flex items-center justify-center w-full h-full z-10">
+                      <span className="relative z-10 font-medium">{button.label || `Button ${index + 1}`}</span>
+                      <span className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
+                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+                    </Link>
+                  </Button>
+                </motion.li>
+              );
+            })
           ) : (
             <Card className="p-6 bg-card border-border text-card-foreground">
               <p>No navigation buttons configured for this event.</p>
@@ -151,3 +156,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
