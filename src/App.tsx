@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -8,6 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 import Layout from "./components/Layout";
+import Navigation from "./components/Navigation";
 import HomePage from "./pages/HomePage";
 import SchedulePage from "./pages/SchedulePage";
 import QuestionsPage from "./pages/QuestionsPage";
@@ -18,7 +20,29 @@ import HotelMapPage from "./pages/HotelMapPage";
 import ContactsPage from "./pages/ContactsPage";
 import NotFound from "./pages/NotFound";
 
-const useRegisterParticipant = () => {
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/questions" element={<QuestionsPage />} />
+        <Route path="/questions-list" element={<QuestionsListPage />} />
+        <Route path="/vote" element={<VotePage />} />
+        <Route path="/hotel-services" element={<HotelServicesPage />} />
+        <Route path="/hotel-map" element={<HotelMapPage />} />
+        <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
+const queryClient = new QueryClient();
+
+const App = () => {
+  // Move the useEffect directly into the App component
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user;
@@ -49,42 +73,17 @@ const useRegisterParticipant = () => {
 
     register();
   }, []);
-};
-
-const AnimatedRoutes = () => {
-  const location = useLocation();
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/schedule" element={<SchedulePage />} />
-        <Route path="/questions" element={<QuestionsPage />} />
-        <Route path="/questions-list" element={<QuestionsListPage />} />
-        <Route path="/vote" element={<VotePage />} />
-        <Route path="/hotel-services" element={<HotelServicesPage />} />
-        <Route path="/hotel-map" element={<HotelMapPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
-  );
-};
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  useRegisterParticipant();
 
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        {/* Теперь TooltipProvider внутри BrowserRouter, сразу под корнем ReactDOM */}
         <TooltipProvider>
           <Toaster />
           <SonnerToaster />
           <Layout>
             <AnimatedRoutes />
           </Layout>
+          <Navigation />
         </TooltipProvider>
       </BrowserRouter>
     </QueryClientProvider>
