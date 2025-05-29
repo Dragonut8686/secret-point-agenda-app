@@ -15,11 +15,10 @@ serve(async (req) => {
   }
 
   try {
-    // 2) Парсим JSON от Telegram
     const update = await req.json()
     const message = update.message
 
-    // 3) Игнорируем всё, что не /start
+    // 2) Игнорируем всё, что не /start
     if (!message || message.text !== '/start') {
       return new Response(
         JSON.stringify({ status: 'ignored' }),
@@ -27,48 +26,59 @@ serve(async (req) => {
       )
     }
 
-    // 4) Достаём данные пользователя
-    const from = message.from
+    // 3) Достаём данные пользователя
+    const from = message.from!
     const telegram_id = from.id
     const username = from.username || null
     const full_name = [from.first_name, from.last_name]
       .filter(Boolean)
       .join(' ') || null
 
-    // 5) Инициализируем Supabase Client с Service Role Key
+    // 4) Инициализируем Supabase Client с Service Role Key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const botToken = Deno.env.get('BOT_TOKEN')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // 6) Вставляем или обновляем запись в participants
-    const { error } = await supabase
+    // 5) Вписываем или обновляем участника
+    const { error: upsertError } = await supabase
       .from('participants')
       .upsert(
         { telegram_id, username, full_name },
         { onConflict: 'telegram_id' }
       )
+    if (upsertError) throw upsertError
 
-    if (error) {
-      console.error('Error inserting participant:', error)
-      throw new Error(error.message)
-    }
+    // 6) Отправляем приветственное сообщение
+    const welcomeText = [
+      `👋 Привет, ${full_name ?? 'друг'}!`,
+      ``,
+      `Это бот конференции SecretPointConf2025.`,
+      `Нажмите на кнопку «Меню мероприятия» внизу, чтобы получить расписание, проголосовать за доклады или задать вопрос спикеру.`,
+      ``,
+      `Если что-то не понятно — пишите сюда в чат, я помогу!`
+    ].join('\n')
 
-    // 7) Возвращаем успешный ответ Telegram
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegram_id,
+        text: welcomeText,
+        parse_mode: 'HTML',
+      }),
+    })
+
+    // 7) Завершаем с успехом
     return new Response(
       JSON.stringify({ status: 'ok', telegram_id }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err: any) {
     console.error('Error in register_user function:', err)
     return new Response(
       JSON.stringify({ error: err.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
