@@ -11,6 +11,7 @@ import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import SchedulePage from "./pages/SchedulePage";
 import QuestionsPage from "./pages/QuestionsPage";
+import QuestionsListPage from "./pages/QuestionsListPage";  // ← импорт новой страницы
 import VotePage from "./pages/VotePage";
 import HotelServicesPage from "./pages/HotelServicesPage";
 import HotelMapPage from "./pages/HotelMapPage";
@@ -63,6 +64,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/questions" element={<QuestionsPage />} />
+        <Route path="/questions-list" element={<QuestionsListPage />} />  {/* ← новый маршрут */}
         <Route path="/vote" element={<VotePage />} />
         <Route path="/hotel-services" element={<HotelServicesPage />} />
         <Route path="/hotel-map" element={<HotelMapPage />} />

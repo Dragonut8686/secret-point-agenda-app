@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,13 +12,13 @@ const Navigation = () => {
     { path: '/', label: 'Главная', icon: Home },
     { path: '/schedule', label: 'Расписание', icon: Calendar },
     { path: '/questions', label: 'Задать вопрос', icon: MessageCircle },
-    { path: '/questions-list', label: 'Список вопросов', icon: List },
+    { path: '/questions-list', label: 'Список вопросов', icon: List },  // ← новая вкладка
     { path: '/vote', label: 'Голосование', icon: Vote },
     { path: '/contacts', label: 'Контакты', icon: Phone },
   ];
 
   return (
-    <motion.nav 
+    <motion.nav
       className="fixed bottom-0 left-0 right-0 bg-[var(--app-bg)]/95 backdrop-blur-lg border-t border-white/20 p-4 z-50"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
