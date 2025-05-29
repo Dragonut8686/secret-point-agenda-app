@@ -1,4 +1,3 @@
-
 // supabase/functions/register_user/index.ts
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -10,7 +9,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // 1) CORS PRE-FLIGHT
+  // 1) CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
