@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Send, User } from 'lucide-react';
 
 interface Speaker {
   id: string;
@@ -89,60 +89,136 @@ const QuestionsPage = () => {
 
   if (isLoading) {
     return (
-      <motion.div className="min-h-screen p-4" initial={{ opacity:0 }} animate={{ opacity:1 }}>
-        <div className="max-w-screen-sm mx-auto text-center">Загрузка спикеров...</div>
+      <motion.div 
+        className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4 flex items-center justify-center" 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--app-primary)] mx-auto mb-4"></div>
+          <p className="text-gray-400">Загрузка спикеров...</p>
+        </div>
       </motion.div>
     );
   }
 
   return (
-    <motion.div className="min-h-screen p-4" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}>
-      <div className="max-w-screen-sm mx-auto">
-        <h1 className="text-2xl font-bold text-center mb-6">Вопросы</h1>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-          <div className="flex items-center mb-4">
-            <MessageCircle className="w-5 h-5 mr-2 text-[var(--app-primary)]" />
-            <h2 className="text-lg font-semibold">Задать вопрос</h2>
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 p-4" 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="max-w-lg mx-auto pt-8">
+        {/* Header */}
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[var(--app-primary)] to-purple-600 rounded-2xl mb-4">
+            <MessageCircle className="w-8 h-8 text-white" />
           </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Задать вопрос</h1>
+          <p className="text-gray-400">Отправьте вопрос спикеру и получите ответ</p>
+        </motion.div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Спикер</label>
-            <Select value={selectedSpeakerId} onValueChange={setSelectedSpeakerId}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Выберите спикера" /></SelectTrigger>
-              <SelectContent>
-                {speakers?.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Form Card */}
+        <motion.div 
+          className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 shadow-2xl"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="space-y-6">
+            {/* Speaker Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                <User className="w-4 h-4 text-[var(--app-primary)]" />
+                Выберите спикера
+              </label>
+              <Select value={selectedSpeakerId} onValueChange={setSelectedSpeakerId}>
+                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-12">
+                  <SelectValue placeholder="Выберите спикера из списка" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  {speakers?.map(speaker => (
+                    <SelectItem 
+                      key={speaker.id} 
+                      value={speaker.id}
+                      className="text-white hover:bg-slate-700 focus:bg-slate-700"
+                    >
+                      {speaker.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Question Text */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-[var(--app-primary)]" />
+                Ваш вопрос
+              </label>
+              <Textarea
+                placeholder="Опишите ваш вопрос подробно..."
+                value={questionText}
+                onChange={e => setQuestionText(e.target.value)}
+                className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
+                maxLength={500}
+              />
+              <div className="text-xs text-gray-400 text-right">
+                {questionText.length}/500
+              </div>
+            </div>
+
+            {/* Anonymous Option */}
+            <div className="flex items-center space-x-3 p-4 bg-white/5 rounded-xl border border-white/10">
+              <Checkbox
+                id="anonymous"
+                checked={isAnonymous}
+                onCheckedChange={c => setIsAnonymous(c === true)}
+                className="border-white/30 data-[state=checked]:bg-[var(--app-primary)] data-[state=checked]:border-[var(--app-primary)]"
+              />
+              <label htmlFor="anonymous" className="text-sm text-gray-200 flex-1">
+                Задать вопрос анонимно
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <Button 
+              onClick={submitQuestion} 
+              disabled={isSubmitting || !questionText.trim() || !selectedSpeakerId}
+              className="w-full bg-gradient-to-r from-[var(--app-primary)] to-purple-600 hover:from-[var(--app-primary)]/90 hover:to-purple-600/90 text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Отправка...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  Отправить вопрос
+                </div>
+              )}
+            </Button>
           </div>
+        </motion.div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Вопрос</label>
-            <Textarea
-              placeholder="Введите ваш вопрос..."
-              value={questionText}
-              onChange={e => setQuestionText(e.target.value)}
-              className="min-h-[100px] resize-none"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2 mb-4">
-            <Checkbox
-              id="anonymous"
-              checked={isAnonymous}
-              onCheckedChange={c => setIsAnonymous(c === true)}
-            />
-            <label htmlFor="anonymous" className="text-sm text-gray-700">
-              Задать анонимно
-            </label>
-          </div>
-
-          <Button onClick={submitQuestion} disabled={isSubmitting} className="w-full">
-            {isSubmitting ? 'Отправка...' : 'Отправить'}
-          </Button>
-        </div>
+        {/* Info Card */}
+        <motion.div 
+          className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <p className="text-sm text-blue-200 text-center">
+            💡 Ваш вопрос будет отправлен спикеру в Telegram и появится в общем списке вопросов
+          </p>
+        </motion.div>
       </div>
     </motion.div>
   );
