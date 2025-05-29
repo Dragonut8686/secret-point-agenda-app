@@ -35,29 +35,20 @@ export type Database = {
       }
       participants: {
         Row: {
-          finish_time: string | null
           full_name: string | null
           id: string
-          start_time: string | null
-          step: number | null
           telegram_id: string | null
           username: string | null
         }
         Insert: {
-          finish_time?: string | null
           full_name?: string | null
           id?: string
-          start_time?: string | null
-          step?: number | null
           telegram_id?: string | null
           username?: string | null
         }
         Update: {
-          finish_time?: string | null
           full_name?: string | null
           id?: string
-          start_time?: string | null
-          step?: number | null
           telegram_id?: string | null
           username?: string | null
         }
@@ -67,6 +58,7 @@ export type Database = {
         Row: {
           author_name: string | null
           author_telegram_id: string | null
+          author_username: string | null
           created_at: string | null
           event_id: string
           id: string
@@ -80,6 +72,7 @@ export type Database = {
         Insert: {
           author_name?: string | null
           author_telegram_id?: string | null
+          author_username?: string | null
           created_at?: string | null
           event_id: string
           id?: string
@@ -93,6 +86,7 @@ export type Database = {
         Update: {
           author_name?: string | null
           author_telegram_id?: string | null
+          author_username?: string | null
           created_at?: string | null
           event_id?: string
           id?: string
@@ -301,7 +295,72 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_questions_detailed: {
+        Row: {
+          author_name: string | null
+          author_telegram_id: string | null
+          author_username: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string | null
+          is_anonymous: boolean | null
+          is_answered: boolean | null
+          is_approved: boolean | null
+          session_id: string | null
+          speaker_id: string | null
+          text: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_votes_detailed: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          full_name: string | null
+          id: string | null
+          telegram_id: string | null
+          username: string | null
+          work_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

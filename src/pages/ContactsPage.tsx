@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 const fetchEventTheme = async () => {
   console.log('Fetching event theme for contacts, EVENT_ID:', EVENT_ID);
@@ -28,6 +29,23 @@ const ContactsPage = () => {
     queryKey: ['eventThemeForContacts', EVENT_ID],
     queryFn: fetchEventTheme
   });
+
+  const { toast } = useToast();
+
+  const copyEmailToClipboard = (email: string) => {
+    navigator.clipboard.writeText(email).then(() => {
+      toast({
+        title: 'Email скопирован',
+        description: `${email} скопирован в буфер обмена`,
+      });
+    }).catch(() => {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось скопировать email',
+        variant: 'destructive',
+      });
+    });
+  };
 
   console.log('Theme in component:', theme);
   console.log('Contacts array:', theme?.contacts);
@@ -141,12 +159,16 @@ const ContactsPage = () => {
                   </Button>
                 )}
                 {contact.email && (
-                  <Button asChild variant="outline" className="w-full justify-start text-gray-300 border-gray-600 hover:bg-gray-700 group overflow-hidden relative">
-                    <a href={`mailto:${contact.email}`} className="flex items-center space-x-2">
+                  <Button 
+                    onClick={() => copyEmailToClipboard(contact.email!)}
+                    variant="outline" 
+                    className="w-full justify-start text-gray-300 border-gray-600 hover:bg-gray-700 group overflow-hidden relative"
+                  >
+                    <div className="flex items-center space-x-2">
                       <Mail className="text-[var(--app-primary)]" size={18} />
                       <span>{contact.email}</span>
                       <span className="absolute inset-0 bg-[var(--app-primary)]/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                    </a>
+                    </div>
                   </Button>
                 )}
                 {!contact.phone && !contact.email && (

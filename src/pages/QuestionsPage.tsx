@@ -159,9 +159,9 @@ const QuestionsPage = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Speaker Selection */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
                 <User className="w-4 h-4 text-[var(--app-primary)]" />
                 Выберите спикера
@@ -170,10 +170,10 @@ const QuestionsPage = () => {
                 value={selectedSpeakerId}
                 onValueChange={setSelectedSpeakerId}
               >
-                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-12">
+                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-11 overflow-hidden">
                   <SelectValue placeholder="Выберите спикера из списка" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-slate-800 border-slate-700 max-w-[calc(100vw-2rem)] z-50">
                   {speakers?.map((speaker) => (
                     <SelectItem
                       key={speaker.id}
@@ -188,7 +188,7 @@ const QuestionsPage = () => {
             </div>
 
             {/* Question Text */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 text-[var(--app-primary)]" />
                 Ваш вопрос
@@ -197,7 +197,7 @@ const QuestionsPage = () => {
                 placeholder="Опишите ваш вопрос подробно..."
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
+                className="min-h-[100px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
                 maxLength={500}
               />
               <div className="text-xs text-gray-400 text-right">
@@ -206,14 +206,14 @@ const QuestionsPage = () => {
             </div>
 
             {/* Anonymous Option */}
-            <div className="flex items-center space-x-3 p-4.bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/10">
               <Checkbox
                 id="anonymous"
                 checked={isAnonymous}
                 onCheckedChange={(c) => setIsAnonymous(c === true)}
                 className="border-white/30 data-[state=checked]:bg-[var(--app-primary)] data-[state=checked]:border-[var(--app-primary)]"
               />
-              <label htmlFor="anonymous" className="text-sm text-gray-200 flex-1">
+              <label htmlFor="anonymous" className="text-sm text-gray-200 flex-1 cursor-pointer">
                 Задать вопрос анонимно
               </label>
             </div>
@@ -224,7 +224,7 @@ const QuestionsPage = () => {
               disabled={
                 isSubmitting || !questionText.trim() || !selectedSpeakerId
               }
-              className="w-full bg-gradient-to-r from-[var(--app-primary)] to-purple-600 hover:from-[var(--app-primary)]/90 hover:to-purple-600/90 text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-[var(--app-primary)] to-purple-600 hover:from-[var(--app-primary)]/90 hover:to-purple-600/90 text-white font-semibold h-11 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
