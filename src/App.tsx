@@ -11,21 +11,18 @@ import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import SchedulePage from "./pages/SchedulePage";
 import QuestionsPage from "./pages/QuestionsPage";
-import QuestionsListPage from "./pages/QuestionsListPage";  // ← импорт новой страницы
+import QuestionsListPage from "./pages/QuestionsListPage";
 import VotePage from "./pages/VotePage";
 import HotelServicesPage from "./pages/HotelServicesPage";
 import HotelMapPage from "./pages/HotelMapPage";
 import ContactsPage from "./pages/ContactsPage";
 import NotFound from "./pages/NotFound";
 
-// 🔐 Регистрируем участника из Telegram WebApp
 const useRegisterParticipant = () => {
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user;
-
     if (!user) return;
-
     const telegram_id = user.id.toString();
     const full_name = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
     const username = user.username ?? null;
@@ -36,14 +33,13 @@ const useRegisterParticipant = () => {
         .select("id")
         .eq("telegram_id", telegram_id)
         .maybeSingle();
-
       if (!existing) {
         await supabase.from("participants").insert({
           telegram_id,
           full_name,
           username,
           step: 0,
-          start_time: new Date().toISOString()
+          start_time: new Date().toISOString(),
         });
         console.log("✅ Участник зарегистрирован:", full_name);
       } else {
@@ -55,7 +51,6 @@ const useRegisterParticipant = () => {
   }, []);
 };
 
-// Компонент маршрутов
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
@@ -64,7 +59,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/questions" element={<QuestionsPage />} />
-        <Route path="/questions-list" element={<QuestionsListPage />} />  {/* ← новый маршрут */}
+        <Route path="/questions-list" element={<QuestionsListPage />} />
         <Route path="/vote" element={<VotePage />} />
         <Route path="/hotel-services" element={<HotelServicesPage />} />
         <Route path="/hotel-map" element={<HotelMapPage />} />
@@ -78,19 +73,20 @@ const AnimatedRoutes = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
-  useRegisterParticipant(); // 👈 Регистрируем при входе
+  useRegisterParticipant();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <SonnerToaster />
-        <BrowserRouter>
+      <BrowserRouter>
+        {/* Теперь TooltipProvider внутри BrowserRouter, сразу под корнем ReactDOM */}
+        <TooltipProvider>
+          <Toaster />
+          <SonnerToaster />
           <Layout>
             <AnimatedRoutes />
           </Layout>
-        </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
