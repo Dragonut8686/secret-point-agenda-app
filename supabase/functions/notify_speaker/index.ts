@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    // Распакуем все поля из запроса
+    // 1) Распакуем все поля
     const {
       speaker_id,
       text,
@@ -24,13 +24,13 @@ serve(async (req) => {
       timestamp,
     } = await req.json()
 
-    // Подключаемся к Supabase
+    // 2) Подключимся к Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const botToken = Deno.env.get('BOT_TOKEN')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Достаём данные спикера
+    // 3) Получим telegram_id и имя спикера
     const { data: speaker, error: speakerError } = await supabase
       .from('speakers')
       .select('telegram_id, name')
@@ -41,27 +41,27 @@ serve(async (req) => {
       throw new Error('Не удалось найти спикера')
     }
 
-    // Обрабатываем chat_id
+    // Обработка chat_id
     let chatId = speaker.telegram_id!.toString().trim()
     if (chatId.startsWith('@')) chatId = chatId.slice(1)
 
-    // Формируем структурированное сообщение
-    // 1. Кому
+    // 4) Формируем структурированное сообщение
     const lineTo = `📨 <b>Новый вопрос спикеру:</b> <i>${escapeHtml(speaker.name)}</i>`
-    // 2. От кого
     const lineFrom = is_anonymous
       ? '🤫 <b>От:</b> Аноним'
       : `🙋 <b>От:</b> ${escapeHtml(asker_name)}${asker_username ? ` (<code>@${escapeHtml(asker_username)}</code>)` : ''}`
-    // 3. Когда
+
+    // Форматируем дату/время в Europe/Moscow
     const dt = new Date(timestamp)
-    const formattedTime = `${dt.toLocaleDateString('ru-RU')} ${dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
-    const lineWhen = `🕒 <b>Когда:</b> ${formattedTime}`
-    // 4. Текст
+    const date = dt.toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })
+    const time = dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
+    const lineWhen = `🕒 <b>Когда:</b> ${date} ${time}`
+
     const lineText = `💬 <b>Вопрос:</b>\n${escapeHtml(text)}`
 
     const html = [lineTo, lineFrom, lineWhen, lineText].join('\n\n')
 
-    // Отправка в Telegram
+    // 5) Шлём в Telegram
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,7 +91,7 @@ serve(async (req) => {
   }
 })
 
-// Функция для экранирования HTML
+// Экранируем HTML-тэги, чтобы в тексте не было уязвимостей
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
