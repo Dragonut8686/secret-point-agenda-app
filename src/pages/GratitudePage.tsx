@@ -16,6 +16,10 @@ const GratitudePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const handleAnonymousChange = (checked: boolean | "indeterminate") => {
+    setIsAnonymous(checked === true);
+  };
+
   const submitGratitude = async () => {
     if (!gratitudeText.trim()) {
       toast({
@@ -119,7 +123,7 @@ const GratitudePage = () => {
             <Checkbox
               id="anonymous"
               checked={isAnonymous}
-              onCheckedChange={setIsAnonymous}
+              onCheckedChange={handleAnonymousChange}
               className="border-white/20 data-[state=checked]:bg-pink-500"
             />
             <label
