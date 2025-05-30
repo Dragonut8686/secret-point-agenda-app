@@ -161,7 +161,7 @@ const HotelServicesPage = () => {
                               className="ml-3 bg-blue-500/20 border-blue-500/30 text-blue-300 hover:bg-blue-500/30"
                             >
                               <Copy className="w-4 h-4 mr-2" />
-                              Скопировать
+                              Скопировать пароль
                             </Button>
                           )}
                         </div>
