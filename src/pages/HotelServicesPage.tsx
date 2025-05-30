@@ -3,8 +3,11 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID, ThemeJson } from '@/config';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { Wifi, Copy, Hotel, Coffee, Car, Utensils } from 'lucide-react';
 
 const fetchEventTheme = async () => {
   const { data, error } = await supabase
@@ -23,13 +26,30 @@ const HotelServicesPage = () => {
     queryFn: fetchEventTheme
   });
 
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string, description: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: 'Скопировано!',
+        description: `${description} скопирован в буфер обмена`,
+      });
+    }).catch(() => {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось скопировать',
+        variant: 'destructive',
+      });
+    });
+  };
+
   if (isLoading) return (
     <motion.div 
       className="text-center py-10 animate-pulse max-w-4xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <p className="text-lg">Loading hotel information...</p>
+      <p className="text-lg">Загрузка информации об отеле...</p>
     </motion.div>
   );
   
@@ -40,8 +60,8 @@ const HotelServicesPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <p>Error loading hotel information or no info provided.</p>
-        <p className="text-sm mt-2">Please check your theme_json configuration.</p>
+        <p>Ошибка загрузки информации об отеле</p>
+        <p className="text-sm mt-2">Проверьте конфигурацию theme_json.</p>
       </motion.div>
     );
   }
@@ -57,6 +77,23 @@ const HotelServicesPage = () => {
     }
     return { icon: null, title: line, description: null };
   });
+
+  const getServiceIcon = (title: string) => {
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('wi-fi') || titleLower.includes('wifi') || titleLower.includes('интернет')) {
+      return <Wifi className="w-6 h-6 text-blue-500" />;
+    }
+    if (titleLower.includes('завтрак') || titleLower.includes('ресторан') || titleLower.includes('питание')) {
+      return <Utensils className="w-6 h-6 text-green-500" />;
+    }
+    if (titleLower.includes('парковка') || titleLower.includes('стоянка')) {
+      return <Car className="w-6 h-6 text-purple-500" />;
+    }
+    if (titleLower.includes('кофе') || titleLower.includes('бар')) {
+      return <Coffee className="w-6 h-6 text-amber-500" />;
+    }
+    return <Hotel className="w-6 h-6 text-indigo-500" />;
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -89,35 +126,53 @@ const HotelServicesPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Card className="bg-gray-800/80 border-gray-700 backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.3)]">
-          <CardContent className="py-6">
+        <motion.div 
+          className="grid gap-4"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          {services.map((service, index) => (
             <motion.div 
-              className="space-y-6"
-              variants={container}
-              initial="hidden"
-              animate="show"
+              key={index} 
+              variants={item}
+              transition={{ delay: 0.1 * index }}
             >
-              {services.map((service, index) => (
-                <motion.div 
-                  key={index} 
-                  className="flex items-start space-x-3"
-                  variants={item}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  {service.icon && (
-                    <span className="text-2xl flex-shrink-0 mt-1">{service.icon}</span>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">{service.title}</h3>
-                    {service.description && (
-                      <p className="text-gray-300 text-sm">{service.description}</p>
-                    )}
+              <Card className="bg-gray-800/80 border-gray-700 backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.3)] hover:shadow-[0_0_25px_rgba(0,0,0,0.4)] transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      {service.icon ? (
+                        <span className="text-3xl">{service.icon}</span>
+                      ) : (
+                        getServiceIcon(service.title)
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-xl text-white mb-2">{service.title}</h3>
+                      {service.description && (
+                        <div className="flex items-center justify-between">
+                          <p className="text-gray-300 text-sm flex-1">{service.description}</p>
+                          {(service.title.toLowerCase().includes('wi-fi') || service.title.toLowerCase().includes('wifi')) && service.description && (
+                            <Button
+                              onClick={() => copyToClipboard(service.description!, 'Пароль Wi-Fi')}
+                              variant="outline"
+                              size="sm"
+                              className="ml-3 bg-blue-500/20 border-blue-500/30 text-blue-300 hover:bg-blue-500/30"
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              Скопировать
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </motion.div>
-              ))}
+                </CardContent>
+              </Card>
             </motion.div>
-          </CardContent>
-        </Card>
+          ))}
+        </motion.div>
       </motion.div>
     </div>
   );
