@@ -1,3 +1,4 @@
+
 // supabase/functions/notify_speaker/index.ts
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -22,6 +23,7 @@ serve(async (req) => {
       asker_username,
       is_anonymous,
       timestamp,
+      question_id,
     } = await req.json()
 
     // 2) Подключимся к Supabase
@@ -61,7 +63,19 @@ serve(async (req) => {
 
     const html = [lineTo, lineFrom, lineWhen, lineText].join('\n\n')
 
-    // 5) Шлём в Telegram
+    // 5) Формируем inline-клавиатуру
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "Ответить",
+            callback_data: `answer:${question_id}`
+          }
+        ]
+      ]
+    }
+
+    // 6) Шлём в Telegram
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,6 +84,7 @@ serve(async (req) => {
         text: html,
         parse_mode: 'HTML',
         disable_web_page_preview: true,
+        reply_markup: replyMarkup,
       }),
     })
     const result = await response.json()

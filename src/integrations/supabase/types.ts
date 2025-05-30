@@ -33,29 +33,73 @@ export type Database = {
         }
         Relationships: []
       }
+      gratitudes: {
+        Row: {
+          created_at: string
+          id: string
+          text: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          text: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          text?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       participants: {
         Row: {
           full_name: string | null
           id: string
+          pending_question_id: string | null
           telegram_id: string | null
           username: string | null
         }
         Insert: {
           full_name?: string | null
           id?: string
+          pending_question_id?: string | null
           telegram_id?: string | null
           username?: string | null
         }
         Update: {
           full_name?: string | null
           id?: string
+          pending_question_id?: string | null
           telegram_id?: string | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "participants_pending_question_id_fkey"
+            columns: ["pending_question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participants_pending_question_id_fkey"
+            columns: ["pending_question_id"]
+            isOneToOne: false
+            referencedRelation: "vw_questions_detailed"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       questions: {
         Row: {
+          answer_text: string | null
+          answered_at: string | null
           author_name: string | null
           author_telegram_id: string | null
           author_username: string | null
@@ -70,6 +114,8 @@ export type Database = {
           text: string
         }
         Insert: {
+          answer_text?: string | null
+          answered_at?: string | null
           author_name?: string | null
           author_telegram_id?: string | null
           author_username?: string | null
@@ -84,6 +130,8 @@ export type Database = {
           text: string
         }
         Update: {
+          answer_text?: string | null
+          answered_at?: string | null
           author_name?: string | null
           author_telegram_id?: string | null
           author_username?: string | null

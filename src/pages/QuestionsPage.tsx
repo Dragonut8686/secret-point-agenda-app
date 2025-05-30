@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -73,8 +74,8 @@ const QuestionsPage = () => {
           : null;
       const authorUsername = !isAnonymous ? user?.username ?? null : null;
 
-      // 2.1) Вставляем в questions все поля
-      const { error: insertError } = await supabase
+      // 2.1) Вставляем в questions все поля и получаем question_id
+      const { data: insertedQuestion, error: insertError } = await supabase
         .from('questions')
         .insert({
           event_id: EVENT_ID,
@@ -84,10 +85,13 @@ const QuestionsPage = () => {
           author_name: authorName,
           author_username: authorUsername,
           is_anonymous: isAnonymous,
-        });
+        })
+        .select('id')
+        .single();
+      
       if (insertError) throw insertError;
 
-      // 2.2) Уведомляем спикера
+      // 2.2) Уведомляем спикера с question_id
       await supabase.functions.invoke('notify_speaker', {
         body: JSON.stringify({
           speaker_id: selectedSpeakerId,
@@ -96,6 +100,7 @@ const QuestionsPage = () => {
           asker_username: authorUsername,
           is_anonymous: isAnonymous,
           timestamp: new Date().toISOString(),
+          question_id: insertedQuestion.id,
         }),
       });
 
@@ -159,7 +164,7 @@ const QuestionsPage = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Speaker Selection */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
@@ -170,7 +175,7 @@ const QuestionsPage = () => {
                 value={selectedSpeakerId}
                 onValueChange={setSelectedSpeakerId}
               >
-                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-11 overflow-hidden">
+                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl h-11">
                   <SelectValue placeholder="Выберите спикера из списка" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-w-[calc(100vw-2rem)] z-50">
@@ -197,7 +202,7 @@ const QuestionsPage = () => {
                 placeholder="Опишите ваш вопрос подробно..."
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                className="min-h-[100px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
+                className="min-h-[80px] bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]/20 rounded-xl resize-none"
                 maxLength={500}
               />
               <div className="text-xs text-gray-400 text-right">

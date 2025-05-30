@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +32,8 @@ const pageToPath = (pageName?: string): string => {
     case "HotelServicesPage": return "/hotel-services";
     case "HotelMapPage": return "/hotel-map";
     case "ContactsPage": return "/contacts";
+    case "GratitudePage": return "/gratitude";
+    case "GratitudesListPage": return "/gratitudes-list";
     default:
       console.warn(`Unknown page name: ${pageName}`);
       return "#";

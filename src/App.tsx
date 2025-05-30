@@ -1,5 +1,4 @@
 
-
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -18,6 +17,8 @@ import VotePage from "./pages/VotePage";
 import HotelServicesPage from "./pages/HotelServicesPage";
 import HotelMapPage from "./pages/HotelMapPage";
 import ContactsPage from "./pages/ContactsPage";
+import GratitudePage from "./pages/GratitudePage";
+import GratitudesListPage from "./pages/GratitudesListPage";
 import NotFound from "./pages/NotFound";
 
 const AnimatedRoutes = () => {
@@ -33,6 +34,8 @@ const AnimatedRoutes = () => {
         <Route path="/hotel-services" element={<HotelServicesPage />} />
         <Route path="/hotel-map" element={<HotelMapPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/gratitude" element={<GratitudePage />} />
+        <Route path="/gratitudes-list" element={<GratitudesListPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
@@ -62,8 +65,6 @@ const App = () => {
           telegram_id,
           full_name,
           username,
-          step: 0,
-          start_time: new Date().toISOString(),
         });
         console.log("✅ Участник зарегистрирован:", full_name);
       } else {
@@ -90,4 +91,3 @@ const App = () => {
 };
 
 export default App;
-

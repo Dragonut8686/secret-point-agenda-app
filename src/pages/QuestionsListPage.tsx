@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID } from '@/config';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageCircle, User, Clock } from 'lucide-react';
+import { MessageCircle, User, Clock, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -16,6 +16,9 @@ interface Question {
   author_username: string | null;
   is_anonymous: boolean;
   created_at: string;
+  answer_text: string | null;
+  answered_at: string | null;
+  is_answered: boolean;
   speakers: {
     name: string;
   } | null;
@@ -34,6 +37,9 @@ const QuestionsListPage = () => {
           author_username,
           is_anonymous,
           created_at,
+          answer_text,
+          answered_at,
+          is_answered,
           speakers (
             name
           )
@@ -146,7 +152,7 @@ const QuestionsListPage = () => {
                     </div>
 
                     {/* Meta Information */}
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-4">
                       {/* Speaker */}
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-[var(--app-primary)]" />
@@ -177,6 +183,25 @@ const QuestionsListPage = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* Answer Block */}
+                    {question.answer_text && (
+                      <div className="p-4 mt-4 bg-white/10 border border-green-500/30 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="font-semibold text-green-400">Ответ от {question.speakers?.name}:</span>
+                        </div>
+                        <p className="text-white leading-relaxed">{question.answer_text}</p>
+                        {question.answered_at && (
+                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            <span>
+                              {format(new Date(question.answered_at), 'dd MMMM, HH:mm', { locale: ru })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
