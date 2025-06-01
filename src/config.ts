@@ -1,3 +1,4 @@
+
 // src/config.ts
 
 // UUID вашего мероприятия из таблицы events
@@ -11,6 +12,7 @@ export interface ThemeContact {
   name: string;
   phone?: string;
   email?: string;
+  telegram?: string;
   icon?: string;
 }
 
