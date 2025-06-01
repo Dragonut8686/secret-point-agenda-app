@@ -73,15 +73,15 @@ const ContactsPage = () => {
     );
   }
 
-  const getTelegramLink = (phone: string) => {
-    if (phone.startsWith('@')) {
-      return `https://t.me/${phone.substring(1)}`;
+  const getTelegramLink = (telegram: string) => {
+    if (telegram && telegram.startsWith('@')) {
+      return `https://t.me/${telegram.substring(1)}`;
     }
     return null;
   };
 
   const getPhoneLink = (phone: string) => {
-    if (phone.match(/^\+?[\d\s\-\(\)]+$/)) {
+    if (phone && phone.match(/^\+?[\d\s\-\(\)]+$/)) {
       return `tel:${phone}`;
     }
     return null;
@@ -140,23 +140,23 @@ const ContactsPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* Telegram */}
-                {contact.phone && contact.phone.startsWith('@') && (
+                {/* Telegram - первый пункт */}
+                {contact.telegram && (
                   <Button 
                     asChild 
                     variant="outline" 
                     className="w-full justify-start text-gray-300 border-gray-600 hover:bg-gray-700 group overflow-hidden relative"
                   >
-                    <a href={getTelegramLink(contact.phone)!} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
+                    <a href={getTelegramLink(contact.telegram)!} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
                       <Send className="w-5 h-5 text-blue-500" />
-                      <span>Telegram: {contact.phone}</span>
+                      <span>{contact.telegram}</span>
                       <span className="absolute inset-0 bg-[var(--app-primary)]/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                     </a>
                   </Button>
                 )}
 
-                {/* Phone */}
-                {contact.phone && !contact.phone.startsWith('@') && getPhoneLink(contact.phone) && (
+                {/* Phone - второй пункт */}
+                {contact.phone && getPhoneLink(contact.phone) && (
                   <Button 
                     asChild 
                     variant="outline" 
@@ -164,13 +164,13 @@ const ContactsPage = () => {
                   >
                     <a href={getPhoneLink(contact.phone)!} className="flex items-center space-x-2">
                       <Phone className="w-5 h-5 text-purple-500" />
-                      <span>Телефон: {contact.phone}</span>
+                      <span>{contact.phone}</span>
                       <span className="absolute inset-0 bg-[var(--app-primary)]/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                     </a>
                   </Button>
                 )}
 
-                {/* Email */}
+                {/* Email - третий пункт */}
                 {contact.email && (
                   <Button 
                     onClick={() => copyToClipboard(contact.email!, 'Email')}
@@ -178,7 +178,7 @@ const ContactsPage = () => {
                     className="w-full justify-start text-gray-300 border-gray-600 hover:bg-gray-700 group overflow-hidden relative"
                   >
                     <Mail className="w-5 h-5 text-green-500 mr-2" />
-                    <span>Email: {contact.email}</span>
+                    <span>{contact.email}</span>
                     <span className="absolute inset-0 bg-[var(--app-primary)]/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                   </Button>
                 )}
