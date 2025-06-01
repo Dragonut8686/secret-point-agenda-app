@@ -1,4 +1,5 @@
 
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -45,7 +46,7 @@ const AnimatedRoutes = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Move the useEffect directly into the App component
+  // Перемещение useEffect напрямую в компонент App
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user;
@@ -55,12 +56,14 @@ const App = () => {
     const username = user.username ?? null;
 
     const register = async () => {
+      console.log('Начало регистрации пользователя:', telegram_id, full_name);
       const { data: existing } = await supabase
         .from("participants")
         .select("id")
         .eq("telegram_id", telegram_id)
         .maybeSingle();
       if (!existing) {
+        console.log('Регистрируем нового участника...');
         await supabase.from("participants").insert({
           telegram_id,
           full_name,
@@ -68,7 +71,7 @@ const App = () => {
         });
         console.log("✅ Участник зарегистрирован:", full_name);
       } else {
-        console.log("✅ Участник уже есть:", full_name);
+        console.log("✅ Участник уже зарегистрирован:", full_name);
       }
     };
 
@@ -91,3 +94,4 @@ const App = () => {
 };
 
 export default App;
+

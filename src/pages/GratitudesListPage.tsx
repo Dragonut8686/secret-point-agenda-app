@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -20,12 +21,17 @@ const GratitudesListPage = () => {
   const { data: gratitudes, isLoading, error } = useQuery({
     queryKey: ['gratitudes'],
     queryFn: async () => {
+      console.log('Загрузка списка благодарностей...');
       const { data, error } = await supabase
         .from('gratitudes')
         .select('id, user_name, text, created_at, is_anonymous')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка загрузки благодарностей:', error);
+        throw error;
+      }
+      console.log('Благодарности загружены:', data);
       return data as Gratitude[];
     },
   });
@@ -46,6 +52,7 @@ const GratitudesListPage = () => {
   }
 
   if (error) {
+    console.error('Ошибка при загрузке благодарностей:', error);
     return (
       <motion.div
         className="flex items-center justify-center min-h-[40vh]"
@@ -81,7 +88,7 @@ const GratitudesListPage = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Header */}
+      {/* Заголовок */}
       <motion.div
         className="text-center mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -95,7 +102,7 @@ const GratitudesListPage = () => {
         <p className="text-gray-400">Слова признательности от участников</p>
       </motion.div>
 
-      {/* Gratitudes List */}
+      {/* Список благодарностей */}
       {!gratitudes || gratitudes.length === 0 ? (
         <motion.div
           className="text-center py-12"
@@ -121,16 +128,16 @@ const GratitudesListPage = () => {
             >
               <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 group">
                 <CardContent className="p-6">
-                  {/* Gratitude Text */}
+                  {/* Текст благодарности */}
                   <div className="mb-4">
                     <p className="text-white text-lg leading-relaxed font-medium">
                       {gratitude.text}
                     </p>
                   </div>
 
-                  {/* Meta Information */}
+                  {/* Метаинформация */}
                   <div className="flex flex-wrap gap-4 text-sm text-gray-300">
-                    {/* Author */}
+                    {/* Автор */}
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-pink-500" />
                       <span className="font-medium">От:</span>
@@ -139,7 +146,7 @@ const GratitudesListPage = () => {
                       </span>
                     </div>
 
-                    {/* Time */}
+                    {/* Время */}
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-pink-500" />
                       <span className="font-medium">Время:</span>
@@ -159,3 +166,4 @@ const GratitudesListPage = () => {
 };
 
 export default GratitudesListPage;
+

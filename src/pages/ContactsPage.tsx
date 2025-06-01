@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,15 +11,15 @@ import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
 const fetchEventTheme = async () => {
-  console.log('Fetching event theme for contacts, EVENT_ID:', EVENT_ID);
+  console.log('Загрузка темы мероприятия для контактов, EVENT_ID:', EVENT_ID);
   const { data, error } = await supabase
     .from('events')
     .select('theme_json')
     .eq('id', EVENT_ID)
     .single();
 
-  console.log('Theme data received:', data);
-  console.log('Error if any:', error);
+  console.log('Получены данные темы:', data);
+  console.log('Ошибка (если есть):', error);
 
   if (error) throw new Error(error.message);
   return data?.theme_json as ThemeJson | null;
@@ -32,7 +33,7 @@ const ContactsPage = () => {
 
   const { toast } = useToast();
 
-  console.log('Theme in component:', theme);
+  console.log('Тема в компоненте:', theme);
 
   const copyToClipboard = (text: string, description: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -60,7 +61,7 @@ const ContactsPage = () => {
   );
   
   if (error || !theme || !theme.contacts || theme.contacts.length === 0) {
-    console.error('Error loading contacts:', error);
+    console.error('Ошибка загрузки контактов:', error);
     return (
       <motion.div 
         className="text-center py-10 text-red-500 max-w-4xl mx-auto"
@@ -155,7 +156,7 @@ const ContactsPage = () => {
                   </Button>
                 )}
 
-                {/* Phone - второй пункт */}
+                {/* Телефон - второй пункт */}
                 {contact.phone && getPhoneLink(contact.phone) && (
                   <Button 
                     asChild 
@@ -192,3 +193,4 @@ const ContactsPage = () => {
 };
 
 export default ContactsPage;
+
