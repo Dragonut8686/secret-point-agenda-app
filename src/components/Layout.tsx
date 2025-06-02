@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[var(--app-bg)] to-slate-900 text-white">
       {!isHomePage && (
-        <div className="p-4">
+        <div className="sticky top-0 z-50 bg-gradient-to-br from-[var(--app-bg)]/95 to-slate-900/95 backdrop-blur-sm border-b border-white/10 p-4">
           <Button
             onClick={() => navigate('/')}
             variant="outline"
