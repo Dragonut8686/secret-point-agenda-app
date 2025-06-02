@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EVENT_ID, ThemeJson } from '@/config';
@@ -27,6 +26,11 @@ const HotelServicesPage = () => {
   });
 
   const { toast } = useToast();
+
+  // Автоматическая прокрутка к верху при загрузке страницы
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const copyToClipboard = (text: string, description: string) => {
     navigator.clipboard.writeText(text).then(() => {
