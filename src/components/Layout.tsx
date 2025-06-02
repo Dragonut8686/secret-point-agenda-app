@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
       
-      <div className="p-4">
+      <div className={`${!isHomePage ? 'pt-4' : ''} p-4`}>
         {children}
       </div>
     </div>
