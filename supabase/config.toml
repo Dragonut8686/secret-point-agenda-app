@@ -1,3 +1,4 @@
+
 project_id = "jwlaydruiivvrrddkvjq"
 
 [api]
@@ -30,12 +31,11 @@ port = 54326
 enabled = true
 port = 54327
 
-# Настройки существующей функции notify_speaker
-[functions.notify_speaker]
+# Настройки новых функций
+[functions.notify_speaker_secretpoint]
 verify_jwt = false
 
-# Настройки новой функции register_user
-[functions.register_user]
+[functions.register_user_secretpoint]
 verify_jwt = false
 
 # Общие переменные окружения для всех функций
@@ -45,5 +45,5 @@ SUPABASE_URL = "https://jwlaydruiivvrrddkvjq.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bGF5ZHJ1aWl2dnJyZGRrdmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MTQ4MzUsImV4cCI6MjA2Mzk5MDgzNX0.8t6pjn4p7TbPpxXZwnR1GVCPQtmGUyo_HQ3Irdk9m38"
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVHsiInJlZiI6Imp3bGF5ZHJ1aWl2dnJyZGRrdmpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODQxNDgzNSwiZXhwIjoyMDYzOTkwODM1fQ.KJafEUjlyi1zWAWpKY3NFR_d-o_V8GLf3SAFyY_B4IQ"
 
-# Telegram Bot
-BOT_TOKEN = "8001709362:AAEemeq8ZA4F1sBHaGBl2Um32lHhBOihl0k"
+# Telegram Bot (новое название секрета)
+BOT_TOKEN_SECRETPOINT = "8001709362:AAEemeq8ZA4F1sBHaGBl2Um32lHhBOihl0k"

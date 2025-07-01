@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -91,8 +90,8 @@ const QuestionsPage = () => {
       
       if (insertError) throw insertError;
 
-      // 2.2) Уведомляем спикера с question_id
-      await supabase.functions.invoke('notify_speaker', {
+      // 2.2) Уведомляем спикера с question_id (используем новую функцию)
+      await supabase.functions.invoke('notify_speaker_secretpoint', {
         body: JSON.stringify({
           speaker_id: selectedSpeakerId,
           text: questionText.trim(),
